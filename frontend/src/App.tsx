@@ -15,8 +15,9 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <h1>HandoffProof</h1>
-        <span className="tagline">An emergency isn't handled until someone accepts responsibility.</span>
+        <span className="tagline">An incident isn't handled until someone accepts responsibility — and the evidence is still visible.</span>
         <span className="badges">
+          <span className="badge prototype">Prototype demo · not a city service</span>
           <span className="badge">{API_MODE}</span>
           {state && <span className="badge">{state.timing_profile} timing</span>}
           {state && <span className="badge">{state.twists.domain}</span>}

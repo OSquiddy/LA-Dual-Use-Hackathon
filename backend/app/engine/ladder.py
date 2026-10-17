@@ -19,9 +19,11 @@ def tick() -> None:
     TODO(B7): for each open incident whose next_step_at has passed, climb one step:
       1 -> 2 nudge the department queue
       2 -> 3 default owner from seeds/oncall.json (B8)
-      3 -> 4 voice.callbacks.request_callback(...) and insert a Callback row
-      4 -> 5 supervisor, only on worse / danger / no_answer on a high-risk case (B9)
-    Log an Event with a one-line reason at every step. Low-risk cases stop at step 3.
+      3 -> 4 ONLY if the caller's callback_ok is true: voice.callbacks.request_callback(...) and
+             insert a Callback row. No consent -> no call, log the reason, keep the debt.
+      4 -> 5 supervisor review on explicit worsening / reported danger, or an already high-risk
+             case whose caller is unreachable (no_answer alone never means worse) (B9)
+    Log an Event with a one-line reason at every step. Age advances the handoff, never the risk score.
     """
 
 
@@ -65,8 +67,9 @@ def record_callback_outcome(o: CallbackOutcome) -> None:
 
         said = "no answer" if o.outcome == "no_answer" else f"resident says {o.outcome}"
         log_event(s, incident.id, "callback", f"Callback #{o.attempt_no}: {said}" + (f" — {o.summary}" if o.summary else ""))
-        # TODO(B9): open/clear caller_unreachable, schedule a retry on no_answer,
-        # climb to step 5 on worse / danger / no_answer on a high-risk case.
+        # TODO(B9): open/clear caller_unreachable; retry on no_answer only within the agreed
+        # consent and retry policy; step 5 on worse / danger, or no_answer on an already
+        # high-risk case. no_answer is unknown status, not evidence of worsening.
         incident.risk_score = max(incident.risk_score, risk.score(s, incident))
         s.commit()
 

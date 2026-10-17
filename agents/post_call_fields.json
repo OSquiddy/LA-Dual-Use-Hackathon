@@ -5,7 +5,7 @@
     { "name": "hazard_type", "type": "enum", "choices": ["flood", "blocked_drain", "water_on_road", "stalled_vehicle", "pothole", "debris", "downed_tree", "downed_line", "outage", "other"], "description": "Best match for what the caller describes" },
     { "name": "danger_words", "type": "string", "description": "Comma-separated danger phrases the caller used, e.g. trapped, car stuck, rising, sparking. Empty if none" },
     { "name": "anyone_in_danger", "type": "boolean", "description": "True if the caller says anyone is in danger or stuck" },
-    { "name": "callback_ok", "type": "boolean", "description": "True if the caller agreed to be called back on this number" }
+    { "name": "callback_ok", "type": "boolean", "description": "True ONLY if the caller clearly said yes to a follow-up call on this number. False if they declined, were unsure, or were not asked" }
   ],
   "callback": [
     { "name": "outcome", "type": "enum", "choices": ["worse", "same", "better"], "description": "Compared with the original report. Leave empty if the resident did not answer" },

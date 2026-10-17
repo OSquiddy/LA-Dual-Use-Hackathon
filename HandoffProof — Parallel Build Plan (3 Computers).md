@@ -20,7 +20,7 @@ The scaffold repo has contracts, stubs, seeds and fixtures. **This updated scope
 
 | # | Task | Status / output |
 | --- | --- | --- |
-| 0.1 | Clone scaffold on A, B, C; A/B run backend tests, C runs `npm run build` and dashboard | **Partial:** one Mac reported 14 passed / 1 expected XFAIL; other computers and frontend not independently verified |
+| 0.1 | Clone scaffold on A, B, C; A/B run backend tests, C runs `npm run build` and dashboard | **Partial:** Mac reported 14 passed / 1 XFAIL (before geography tests); Windows on `phase0/geography`: 23 passed / 1 XFAIL and frontend build passes. Third machine not yet verified |
 | 0.2 | Confirm approximate Highland Park N Figueroa locations visually; test spoken "Avenue fifty two" normalization | **Partial:** local geography tests passed; map review and speech normalization still need verification |
 | 0.3 | Agree fictional storm-night reports, departments, and on-call contacts | Draft in `backend/seeds/storm_night.json` and `oncall.json`; **team sign-off pending** |
 | 0.4 | Agree shared contract migration: `callback_ok`, acknowledgment event/field, critical-alert payload and evidence provenance | **Open — do not mark old contracts as updated** |

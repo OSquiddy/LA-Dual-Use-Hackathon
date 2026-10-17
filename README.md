@@ -70,7 +70,7 @@ Retell callback ◄── request_callback(...) ◄──── ladder.tick() ev
 - Human Accept and Close endpoints work; simulated callback outcomes appear in the incident event timeline.
 - React renders fixture or live state: departments, ranked supervisor top 10, incident detail, and twist controls.
 - `backend/tests/test_contracts.py` protects the **current** fixture-to-contract compatibility.
-- One locally reported test run after geography updates: **14 passed, 1 XFAIL**; other machines and frontend integration were not verified in that run.
+- Verified on `phase0/geography` (Windows, Python 3.13): backend **23 passed, 1 XFAIL** (the B4 linker target) and `npm run build` passes. An earlier Mac run reported 14 passed, 1 XFAIL before the geography tests were added. Live `VITE_API=live` integration is not yet verified.
 
 **Planned / not implemented:** incident linking (B4), deterministic physical-risk scoring (B5), escalation ladder (B7–B10), department silence (B12), twists (B13–B15), authenticated Retell mapping (A3/A9), **callback consent persisted and enforced**, an explicit **acknowledged** state, and an **always-visible critical-alert lane**.
 
