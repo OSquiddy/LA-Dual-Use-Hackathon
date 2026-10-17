@@ -1,13 +1,19 @@
 # HandoffProof
 
-An emergency isn't handled until someone accepts responsibility.
+**An incident isn't handled until someone accepts responsibility — and the evidence is still visible.**
+
+HandoffProof is a **software-only AI-powered incident intelligence and accountability** hackathon prototype. It accepts fictional non-emergency resident reports through Retell AI, links related calls without discarding source evidence, tracks department handoffs and human acceptance, and uses consent-gated callbacks to collect updates. A human supervisor sees a ranked top 10 **plus persistent critical alerts** grounded in reported evidence.
+
+**Scope / safety:** This is **not** an official City of Los Angeles service and is not connected to 911, municipal ticket systems, or any emergency dispatcher. It never claims safety, auto-closes cases, or calls anyone without explicit permission. **Wireless sensing / ESP32 / physical hardware is excluded** from this MVP; port/grid/defense-related handoffs are prospective software applications, not deployed integrations.
+
+**Current scaffold vs revised plan:** The project already has running stubs, seed loader, simulated callbacks, API/UI fixture contracts and human Accept/Close. Linking (B4), new acknowledgment state, consent persistence/enforcement and a persistent critical-alert lane still require coordinated implementation. Do **not** treat the new plan as code already implemented.
 
 - **What we're building and why:** [HandoffProof — Build Plan & Judge Defense.md](HandoffProof%20—%20Build%20Plan%20&%20Judge%20Defense.md)
 - **Who builds what, in parallel:** [HandoffProof — Parallel Build Plan (3 Computers).md](HandoffProof%20—%20Parallel%20Build%20Plan%20(3%20Computers).md)
 
 ## Who owns what
 
-Only edit files you own. Shared files (`backend/app/contracts.py`, `backend/app/models.py`, `.env.example`, `frontend/src/types.ts`) change only after a message in the team chat.
+Only edit files you own. Shared files (`backend/app/contracts.py`, `backend/app/models.py`, `.env.example`, `frontend/src/types.ts`) and any API changes need a team agreement **before edits**. Branches/PR review are preferred to direct edits on `main`.
 
 | Computer | Owns |
 | --- | --- |
@@ -15,7 +21,7 @@ Only edit files you own. Shared files (`backend/app/contracts.py`, `backend/app/
 | **PC-B — Engine** | `backend/app/engine/`, `backend/app/api/`, `backend/app/models.py`, `backend/seeds/`, `backend/tests/` |
 | **PC-C — Dashboard** | `frontend/` |
 
-Every placeholder is tagged with its task id from the parallel plan. Search for `TODO(B4)`, `TODO(A8)`, etc. to find your next job.
+Every placeholder is tagged with its original task ID (`TODO(B4)`, `TODO(A8)`, etc.). The revised plans keep **PC-A / PC-B / PC-C ownership and IDs** while adding consent, acknowledgment and safety acceptance tests. Use the plans as requirements and verify the current code separately.
 
 ## Run it
 
@@ -25,7 +31,7 @@ Every placeholder is tagged with its task id from the parallel plan. Search for 
 python -m venv .venv
 # Windows: .venv\Scripts\activate    macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-cp ../.env.example ../.env           # defaults work: CALL_MODE=simulate, TIMING_PROFILE=demo
+test -f ../.env || cp ../.env.example ../.env  # local only; never overwrite configured secrets
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 pytest                               # contract + smoke tests
 ```
@@ -36,13 +42,13 @@ Load the storm-night scenario: `curl -X POST localhost:8000/api/demo/reset -H "c
 
 ```bash
 npm install
-cp .env.example .env.local           # VITE_API=fixture works with no backend
+test -f .env.local || cp .env.example .env.local    # set VITE_API=live for local integration
 npm run dev                          # http://localhost:5173 · press T for the twist panel
 ```
 
 Set `VITE_API=live` to poll the backend. `VITE_BACKEND_URL` can point at PC-B's machine on the same Wi-Fi (e.g. `http://192.168.1.20:8000`).
 
-**Retell webhooks** need a public URL: `cloudflared tunnel --url http://localhost:8000` (or `ngrok http 8000`). Put the URL in `PUBLIC_BASE_URL` and set the agent webhook to `<url>/retell/webhook`.
+**Retell Phase 0:** Intake and Callback agent prompts/extraction fields have been browser-tested. **Do not expose the public webhook yet**: `backend/app/voice/webhooks.py` still needs signature verification, and `callback_ok` is not yet persisted or enforced in the outbound flow. Keep `CALL_MODE=simulate`. After the safety gates pass, PC-A can use `cloudflared tunnel --url http://localhost:8000` (or `ngrok http 8000`) and configure `<url>/retell/webhook`. Only call explicitly consenting test participants.
 
 ## How the pieces join
 
@@ -56,13 +62,22 @@ Retell callback ◄── request_callback(...) ◄──── ladder.tick() ev
                                                               GET /api/state ──► dashboard (frontend/, C)
 ```
 
-`CALL_MODE=simulate` replaces Retell with `voice/simulator.py`, so B and C never wait on phones.
+`CALL_MODE=simulate` replaces the outbound Retell API with `voice/simulator.py`; it does not establish real consent or verify live webhook signatures. B and C can develop against synthetic data while A implements validated voice integration.
 
 ## What works today (scaffold)
 
-- Seeds load through the same `ingest_report` path a live call uses. Locations are geocoded from `seeds/gazetteer.json`, and every incident gets a department and a `no_owner` debt.
-- Accept and close (human-only) work; simulated callbacks are recorded and show up in "why it's here".
-- The dashboard renders fixtures or live data: department queues, supervisor top 10, incident drawer, twist panel.
-- `tests/test_contracts.py` fails if the frontend fixtures stop matching the backend's response models.
+- Seed loader uses `ingest_report`; gazetteer geocodes listed streets; open incidents initially get a department assignment and `no_owner` debt.
+- Human Accept and Close endpoints work; simulated callback outcomes appear in the incident event timeline.
+- React renders fixture or live state: departments, ranked supervisor top 10, incident detail, and twist controls.
+- `backend/tests/test_contracts.py` protects the **current** fixture-to-contract compatibility.
+- One locally reported test run after geography updates: **14 passed, 1 XFAIL**; other machines and frontend integration were not verified in that run.
 
-Not built yet (placeholders): linking (B4: `test_storm_night_links_into_one_incident` is the target), risk formula (B5), the ladder steps (B7–B10), the department-silence detector (B12), twists (B13–B15), and Retell signature check and live payload mapping (A3, A9).
+**Planned / not implemented:** incident linking (B4), deterministic physical-risk scoring (B5), escalation ladder (B7–B10), department silence (B12), twists (B13–B15), authenticated Retell mapping (A3/A9), **callback consent persisted and enforced**, an explicit **acknowledged** state, and an **always-visible critical-alert lane**.
+
+### Phase 0 → Phase 1 integration gates
+
+1. Confirm three developers can install/start their assigned app portions; backend tests and frontend build pass.
+2. Confirm synthetic `storm_night` seed and approximate Highland Park geometry; geocode spoken locations without inventing missing data.
+3. Agree a synchronized migration for `ReportIn.callback_ok`, acknowledgment fields/events, critical-alert representation, `frontend/src/types.ts` and fixture/tests.
+4. Keep Retell credentials private and `CALL_MODE=simulate` until authenticated webhooks, consent gating and approved test numbers work.
+5. Do not start hardware features or claim affiliation with LA. Phase 1 success is **3 preserved reports → 1 incident → consented follow-up → evidence-backed human review**.
