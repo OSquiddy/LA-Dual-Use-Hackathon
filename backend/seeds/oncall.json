@@ -1,0 +1,6 @@
+{
+  "_note": "Default owner per department and area (ladder step 3). Fictional names; the city configures these, we never invent owners.",
+  "Street Services": { "Highland Park": "J. Ramirez (on-call)" },
+  "Urban Forestry": { "Highland Park": "T. Nguyen (on-call)" },
+  "Power & Water": { "Highland Park": "K. Okafor (on-call)" }
+}

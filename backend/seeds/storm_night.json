@@ -1,0 +1,38 @@
+{
+  "name": "storm_night",
+  "domain": "storm",
+  "_note": "Three related-but-different reports on one street. B4's linker should merge them into ONE incident. Phone numbers are fictional 555 numbers; the demo_resident report gets DEMO_RESIDENT_PHONE from .env.",
+  "reports": [
+    {
+      "offset_s": -540,
+      "call_id": "seed-storm-1",
+      "phone": "+13235550101",
+      "location_text": "N Figueroa St and Avenue 52",
+      "hazard_type": "blocked_drain",
+      "danger_words": [],
+      "anyone_in_danger": false,
+      "transcript": "The storm drain on the corner of Figueroa and Avenue 52 is completely blocked and water is pooling."
+    },
+    {
+      "offset_s": -360,
+      "call_id": "seed-storm-2",
+      "phone": "+13235550102",
+      "location_text": "Figueroa near Avenue 53",
+      "hazard_type": "water_on_road",
+      "danger_words": [],
+      "anyone_in_danger": false,
+      "transcript": "There's water all the way across Figueroa near Avenue 53. Cars are slowing right down."
+    },
+    {
+      "offset_s": -180,
+      "call_id": "seed-storm-3",
+      "phone": "+13235550103",
+      "demo_resident": true,
+      "location_text": "Avenue 54 by Figueroa",
+      "hazard_type": "stalled_vehicle",
+      "danger_words": ["car stuck"],
+      "anyone_in_danger": false,
+      "transcript": "A car is stuck in the water by Avenue 54. The driver got out but the water keeps coming."
+    }
+  ]
+}

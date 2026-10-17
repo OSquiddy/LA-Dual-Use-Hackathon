@@ -1,0 +1,15 @@
+{
+  "_note": "Post-call analysis fields to configure in Retell. The backend reads them from call.call_analysis.custom_analysis_data (verify on the first real payload; mapping lives in backend/app/voice/webhooks.py).",
+  "intake": [
+    { "name": "location_text", "type": "string", "description": "Street and nearest cross-street or landmark, as the caller said it" },
+    { "name": "hazard_type", "type": "enum", "choices": ["flood", "blocked_drain", "water_on_road", "stalled_vehicle", "pothole", "debris", "downed_tree", "downed_line", "outage", "other"], "description": "Best match for what the caller describes" },
+    { "name": "danger_words", "type": "string", "description": "Comma-separated danger phrases the caller used, e.g. trapped, car stuck, rising, sparking. Empty if none" },
+    { "name": "anyone_in_danger", "type": "boolean", "description": "True if the caller says anyone is in danger or stuck" },
+    { "name": "callback_ok", "type": "boolean", "description": "True if the caller agreed to be called back on this number" }
+  ],
+  "callback": [
+    { "name": "outcome", "type": "enum", "choices": ["worse", "same", "better"], "description": "Compared with the original report. Leave empty if the resident did not answer" },
+    { "name": "anyone_in_danger", "type": "boolean", "description": "True if the resident says anyone is in danger or stuck" },
+    { "name": "summary", "type": "string", "description": "One short sentence, e.g. 'water at the curb and rising'" }
+  ]
+}

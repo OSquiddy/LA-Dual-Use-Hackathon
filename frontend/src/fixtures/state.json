@@ -1,0 +1,70 @@
+{
+  "now": "2026-10-18T02:14:05Z",
+  "timing_profile": "demo",
+  "twists": { "dept_silent": false, "surge": false, "phones_down": false, "domain": "storm" },
+  "incidents": [
+    {
+      "id": 1,
+      "title": "Flooding — N Figueroa St & Ave 52",
+      "hazard_type": "flood",
+      "status": "escalated",
+      "ladder_step": 5,
+      "risk_score": 82,
+      "report_count": 3,
+      "department": "Street Services",
+      "owner": "J. Ramirez (on-call)",
+      "accepted": false,
+      "next_step_at": null,
+      "debts": [
+        { "kind": "location", "label": "Exact location unclear" },
+        { "kind": "caller_unreachable", "label": "1 caller unreachable" },
+        { "kind": "no_owner", "label": "No one has accepted" }
+      ],
+      "why": "Unowned 6 min · resident says worse · 1 caller unreachable",
+      "lat": 34.1093,
+      "lng": -118.1986
+    },
+    {
+      "id": 2,
+      "title": "Downed tree — N Figueroa St & Ave 57",
+      "hazard_type": "downed_tree",
+      "status": "open",
+      "ladder_step": 2,
+      "risk_score": 20,
+      "report_count": 1,
+      "department": "Urban Forestry",
+      "owner": null,
+      "accepted": false,
+      "next_step_at": "2026-10-18T02:14:20Z",
+      "debts": [{ "kind": "no_owner", "label": "No one has accepted" }],
+      "why": "Not accepted after 15 s; reminder sent to Urban Forestry",
+      "lat": 34.1135,
+      "lng": -118.1934
+    },
+    {
+      "id": 3,
+      "title": "Pothole — N Figueroa St & Ave 50",
+      "hazard_type": "pothole",
+      "status": "accepted",
+      "ladder_step": 1,
+      "risk_score": 5,
+      "report_count": 1,
+      "department": "Street Services",
+      "owner": "M. Lee",
+      "accepted": true,
+      "next_step_at": null,
+      "debts": [],
+      "why": "Accepted by M. Lee (Street Services)",
+      "lat": 34.1074,
+      "lng": -118.2007
+    }
+  ],
+  "supervisor_queue": [1],
+  "departments": [
+    { "name": "Street Services", "assigned_1h": 12, "accepted_1h": 0, "silent": true },
+    { "name": "Urban Forestry", "assigned_1h": 1, "accepted_1h": 0, "silent": false }
+  ],
+  "alerts": [
+    { "type": "department_silent", "department": "Street Services", "text": "Street Services accepted 0 of 12 in the last hour" }
+  ]
+}

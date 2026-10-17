@@ -1,0 +1,74 @@
+{
+  "id": 1,
+  "title": "Flooding — N Figueroa St & Ave 52",
+  "hazard_type": "flood",
+  "status": "escalated",
+  "ladder_step": 5,
+  "risk_score": 82,
+  "report_count": 3,
+  "department": "Street Services",
+  "owner": "J. Ramirez (on-call)",
+  "accepted": false,
+  "next_step_at": null,
+  "debts": [
+    { "kind": "location", "label": "Exact location unclear" },
+    { "kind": "caller_unreachable", "label": "1 caller unreachable" },
+    { "kind": "no_owner", "label": "No one has accepted" }
+  ],
+  "why": "Unowned 6 min · resident says worse · 1 caller unreachable",
+  "lat": 34.1093,
+  "lng": -118.1986,
+  "reports": [
+    {
+      "id": 1,
+      "call_id": "seed-storm-1",
+      "phone": "+13235550101",
+      "location_text": "N Figueroa St and Avenue 52",
+      "hazard_type": "blocked_drain",
+      "danger_words": [],
+      "transcript": "The storm drain on the corner of Figueroa and Avenue 52 is completely blocked and water is pooling.",
+      "created_at": "2026-10-18T02:05:05Z"
+    },
+    {
+      "id": 2,
+      "call_id": "seed-storm-2",
+      "phone": "+13235550102",
+      "location_text": "Figueroa near Avenue 53",
+      "hazard_type": "water_on_road",
+      "danger_words": [],
+      "transcript": "There's water all the way across Figueroa near Avenue 53. Cars are slowing right down.",
+      "created_at": "2026-10-18T02:08:05Z"
+    },
+    {
+      "id": 3,
+      "call_id": "seed-storm-3",
+      "phone": "+13235550103",
+      "location_text": "Avenue 54 by Figueroa",
+      "hazard_type": "stalled_vehicle",
+      "danger_words": ["car stuck"],
+      "transcript": "A car is stuck in the water by Avenue 54. The driver got out but the water keeps coming.",
+      "created_at": "2026-10-18T02:11:05Z"
+    }
+  ],
+  "events": [
+    { "type": "assigned", "reason": "Sent to Street Services; waiting for Accept", "at": "2026-10-18T02:05:05Z" },
+    { "type": "linked", "reason": "New report linked: Figueroa near Avenue 53", "at": "2026-10-18T02:08:05Z" },
+    { "type": "linked", "reason": "New report linked: Avenue 54 by Figueroa", "at": "2026-10-18T02:11:05Z" },
+    { "type": "nudge", "reason": "Not accepted after 15 s; reminder sent to Street Services", "at": "2026-10-18T02:11:20Z" },
+    { "type": "default_owner", "reason": "Still not accepted; assigned to J. Ramirez (on-call)", "at": "2026-10-18T02:11:35Z" },
+    { "type": "callback", "reason": "Callback #1: no answer", "at": "2026-10-18T02:12:20Z" },
+    { "type": "callback", "reason": "Callback #2: resident says worse — Water is at the curb and rising", "at": "2026-10-18T02:13:40Z" },
+    { "type": "escalated", "reason": "Unowned 6 min · resident says worse · 1 caller unreachable", "at": "2026-10-18T02:13:41Z" }
+  ],
+  "callbacks": [
+    { "attempt_no": 1, "outcome": "no_answer", "danger": false, "summary": "", "called_at": "2026-10-18T02:12:05Z" },
+    { "attempt_no": 2, "outcome": "worse", "danger": true, "summary": "Water is at the curb and rising", "called_at": "2026-10-18T02:13:20Z" }
+  ],
+  "assignment": {
+    "department": "Street Services",
+    "owner": "J. Ramirez (on-call)",
+    "assigned_at": "2026-10-18T02:05:05Z",
+    "accepted_at": null,
+    "default_owner_at": "2026-10-18T02:11:35Z"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "_note": "PLACEHOLDER demo corridor. Coordinates are approximate - confirm the street and lat/lng on a map in Phase 0.",
+  "places": [
+    { "name": "N Figueroa St & Ave 50", "street": "figueroa", "cross": ["avenue 50", "ave 50"], "lat": 34.1074, "lng": -118.2007, "area": "Highland Park" },
+    { "name": "N Figueroa St & Ave 52", "street": "figueroa", "cross": ["avenue 52", "ave 52"], "lat": 34.1093, "lng": -118.1986, "area": "Highland Park" },
+    { "name": "N Figueroa St & Ave 53", "street": "figueroa", "cross": ["avenue 53", "ave 53"], "lat": 34.1101, "lng": -118.1976, "area": "Highland Park" },
+    { "name": "N Figueroa St & Ave 54", "street": "figueroa", "cross": ["avenue 54", "ave 54"], "lat": 34.1110, "lng": -118.1965, "area": "Highland Park" },
+    { "name": "N Figueroa St & Ave 57", "street": "figueroa", "cross": ["avenue 57", "ave 57"], "lat": 34.1135, "lng": -118.1934, "area": "Highland Park" }
+  ]
+}
