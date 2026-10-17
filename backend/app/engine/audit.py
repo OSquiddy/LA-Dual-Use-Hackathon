@@ -1,12 +1,21 @@
-"""Debt list and audit-trail helpers. Every engine decision goes through log_event."""
+"""Debt list and audit-trail helpers. Every engine decision and human action goes through log_event."""
+from collections.abc import Sequence
+
 from sqlmodel import Session, col, select
 
 from app.models import Debt, Event
 from app.timeutil import utcnow
 
 
-def log_event(s: Session, incident_id: int | None, type: str, reason: str) -> Event:
-    event = Event(incident_id=incident_id, type=type, reason=reason)
+def log_event(
+    s: Session,
+    incident_id: int | None,
+    type: str,
+    reason: str,
+    actor: str = "engine",
+    evidence: Sequence[str] = (),
+) -> Event:
+    event = Event(incident_id=incident_id, type=type, reason=reason, actor=actor, evidence=list(evidence))
     s.add(event)
     return event
 

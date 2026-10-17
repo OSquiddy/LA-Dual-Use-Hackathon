@@ -46,7 +46,8 @@ def intake_from_call(call: dict) -> ReportIn:
         location_text=fields.get("location_text"),
         hazard_type=hazard if hazard in HAZARD_TYPES else "other",
         danger_words=_as_list(fields.get("danger_words")),
-        anyone_in_danger=bool(fields.get("anyone_in_danger")),
+        anyone_in_danger=_as_bool(fields.get("anyone_in_danger")),
+        callback_ok=_as_bool(fields.get("callback_ok")),  # anything but a clear yes means no callback
         transcript=call.get("transcript") or "",
         created_at=_call_time(call),
     )
@@ -63,7 +64,7 @@ def callback_from_call(call: dict) -> CallbackOutcome:
         call_id=call["call_id"],
         attempt_no=int(metadata.get("attempt_no", 1)),
         outcome=outcome,
-        danger=bool(fields.get("anyone_in_danger")),
+        danger=_as_bool(fields.get("anyone_in_danger")),
         summary=fields.get("summary") or "",
         transcript=call.get("transcript") or "",
     )
@@ -75,6 +76,13 @@ def _as_list(value) -> list[str]:
     if isinstance(value, str) and value.strip():
         return [w.strip() for w in value.split(",") if w.strip()]
     return []
+
+
+def _as_bool(value) -> bool:
+    """Only a real true (or the string "true"/"yes") counts; bool("false") would be True."""
+    if isinstance(value, str):
+        return value.strip().lower() in ("true", "yes")
+    return value is True
 
 
 def _call_time(call: dict) -> datetime:

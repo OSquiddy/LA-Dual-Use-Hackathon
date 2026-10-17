@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router as api_router
-from app.config import CALL_MODE, CORS_ORIGINS, LADDER_TICK_S, TIMING_PROFILE
+from app.config import CALL_MODE, CORS_ORIGINS, LADDER_ENABLED, LADDER_TICK_S, TIMING_PROFILE
 from app.db import init_db
 from app.engine import ladder
 from app.voice.webhooks import router as retell_router
@@ -28,9 +28,10 @@ async def ladder_loop() -> None:
 async def lifespan(app: FastAPI):
     init_db()
     log.info("HandoffProof up | CALL_MODE=%s | TIMING_PROFILE=%s", CALL_MODE, TIMING_PROFILE)
-    task = asyncio.create_task(ladder_loop())
+    task = asyncio.create_task(ladder_loop()) if LADDER_ENABLED else None
     yield
-    task.cancel()
+    if task:
+        task.cancel()
 
 
 app = FastAPI(title="HandoffProof", lifespan=lifespan)

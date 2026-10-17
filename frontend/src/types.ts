@@ -4,7 +4,7 @@ export type Status = "open" | "accepted" | "escalated" | "closed";
 export type Outcome = "worse" | "same" | "better" | "no_answer";
 
 export interface Debt {
-  kind: string; // location | caller_unreachable | no_owner | no_update
+  kind: string; // location | caller_unreachable | no_owner | no_update | consent_unknown
   label: string;
 }
 
@@ -13,17 +13,19 @@ export interface Incident {
   title: string;
   hazard_type: string;
   status: Status;
-  ladder_step: number; // 1 assigned · 2 nudge · 3 default owner · 4 callback · 5 supervisor
-  risk_score: number;
+  ladder_step: number; // 1 assigned · 2 nudge · 3 default owner · 4 callback · 5 supervisor (= critical)
+  risk_score: number; // physical risk from evidence only
   report_count: number;
   department: string | null;
-  owner: string | null;
+  owner: string | null; // proposed (default on-call) or accepting owner; see `accepted`
   accepted: boolean;
   next_step_at: string | null;
   debts: Debt[];
   why: string;
   lat: number | null;
   lng: number | null;
+  acknowledged: boolean; // receipt only; never implies accepted
+  critical: boolean; // also listed in AppState.critical_alerts
 }
 
 export interface Department {
@@ -39,6 +41,18 @@ export interface Alert {
   text: string;
 }
 
+/** Pinned safety alert. Never capped by the top 10; stays until a human closes the case. */
+export interface CriticalAlert {
+  incident_id: number;
+  title: string;
+  reason: string;
+  quote: string; // the resident's own words behind the alert
+  evidence: string[]; // e.g. ["report:3", "callback:2"]
+  since: string;
+  accepted: boolean;
+  owner: string | null;
+}
+
 export interface Twists {
   dept_silent: boolean;
   surge: boolean;
@@ -51,26 +65,30 @@ export interface AppState {
   timing_profile: string;
   twists: Twists;
   incidents: Incident[];
-  supervisor_queue: number[];
+  supervisor_queue: number[]; // highest risk first, capped at 10
   departments: Department[];
   alerts: Alert[];
+  critical_alerts: CriticalAlert[]; // uncapped, shown apart from the top 10
 }
 
 export interface Report {
   id: number;
   call_id: string;
-  phone: string | null;
+  phone: string | null; // masked, e.g. "•••0103"
   location_text: string | null;
   hazard_type: string;
   danger_words: string[];
   transcript: string;
   created_at: string;
+  callback_ok: boolean;
 }
 
 export interface IncidentEvent {
   type: string;
   reason: string;
   at: string;
+  actor: string; // engine | resident | a named person
+  evidence: string[]; // e.g. ["report:3"]
 }
 
 export interface Callback {
@@ -87,6 +105,9 @@ export interface Assignment {
   assigned_at: string;
   accepted_at: string | null;
   default_owner_at: string | null;
+  acknowledged_at: string | null;
+  acknowledged_by: string | null;
+  accepted_by: string | null;
 }
 
 export interface IncidentDetail extends Incident {

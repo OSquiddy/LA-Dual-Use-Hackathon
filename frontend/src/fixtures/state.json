@@ -9,20 +9,20 @@
       "hazard_type": "flood",
       "status": "escalated",
       "ladder_step": 5,
-      "risk_score": 82,
+      "risk_score": 100,
       "report_count": 3,
       "department": "Street Services",
       "owner": "J. Ramirez (on-call)",
       "accepted": false,
       "next_step_at": null,
       "debts": [
-        { "kind": "location", "label": "Exact location unclear" },
-        { "kind": "caller_unreachable", "label": "1 caller unreachable" },
-        { "kind": "no_owner", "label": "No one has accepted" }
+        { "kind": "no_owner", "label": "Assigned to J. Ramirez (on-call); not accepted yet" }
       ],
-      "why": "Unowned 6 min · resident says worse · 1 caller unreachable",
+      "why": "Resident says it's worse, someone in danger",
       "lat": 34.106094,
-      "lng": -118.199577
+      "lng": -118.199577,
+      "acknowledged": false,
+      "critical": true
     },
     {
       "id": 2,
@@ -36,10 +36,15 @@
       "owner": null,
       "accepted": false,
       "next_step_at": "2026-10-18T02:14:20Z",
-      "debts": [{ "kind": "no_owner", "label": "No one has accepted" }],
-      "why": "Not accepted after 15 s; reminder sent to Urban Forestry",
+      "debts": [
+        { "kind": "no_owner", "label": "No one has accepted" },
+        { "kind": "consent_unknown", "label": "No callback permission; follow-up needs a person" }
+      ],
+      "why": "Acknowledged by T. Nguyen (receipt only; not accepted)",
       "lat": 34.109459,
-      "lng": -118.192749
+      "lng": -118.192749,
+      "acknowledged": true,
+      "critical": false
     },
     {
       "id": 3,
@@ -56,7 +61,9 @@
       "debts": [],
       "why": "Accepted by M. Lee (Street Services)",
       "lat": 34.104961,
-      "lng": -118.201866
+      "lng": -118.201866,
+      "acknowledged": false,
+      "critical": false
     }
   ],
   "supervisor_queue": [1],
@@ -66,5 +73,17 @@
   ],
   "alerts": [
     { "type": "department_silent", "department": "Street Services", "text": "Street Services accepted 0 of 12 in the last hour" }
+  ],
+  "critical_alerts": [
+    {
+      "incident_id": 1,
+      "title": "Flooding — N Figueroa St & Ave 52",
+      "reason": "Resident says it's worse, someone in danger",
+      "quote": "Water is at the curb and rising",
+      "evidence": ["callback:2"],
+      "since": "2026-10-18T02:13:41Z",
+      "accepted": false,
+      "owner": "J. Ramirez (on-call)"
+    }
   ]
 }

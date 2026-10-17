@@ -15,7 +15,8 @@ def seed_exists(name: str) -> bool:
 def load_seed(name: str) -> int:
     """Load seeds/<name>.json. offset_s is relative to now (negative = already happened).
 
-    The report marked "demo_resident" gets DEMO_RESIDENT_PHONE so the live callback rings a teammate.
+    The report marked "demo_resident" gets DEMO_RESIDENT_PHONE so the live callback rings a teammate
+    (who must have agreed to it). Only rows with "callback_ok": true are ever called back.
     TODO(B2): replay rows with a positive offset_s over time (needed for the surge twist).
     """
     data = json.loads((SEEDS_DIR / f"{name}.json").read_text(encoding="utf-8"))
@@ -34,6 +35,7 @@ def load_seed(name: str) -> int:
                 hazard_type=row["hazard_type"],
                 danger_words=row.get("danger_words", []),
                 anyone_in_danger=row.get("anyone_in_danger", False),
+                callback_ok=row.get("callback_ok", False),
                 transcript=row.get("transcript", ""),
                 created_at=now + timedelta(seconds=row.get("offset_s", 0)),
             )

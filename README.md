@@ -66,13 +66,16 @@ Retell callback ◄── request_callback(...) ◄──── ladder.tick() ev
 
 ## What works today (scaffold)
 
-- Seed loader uses `ingest_report`; gazetteer geocodes listed streets; open incidents initially get a department assignment and `no_owner` debt.
-- Human Accept and Close endpoints work; simulated callback outcomes appear in the incident event timeline.
+- **Engine (B, `backend` branch):** related reports link into one incident (≤300 m from its first report, ≤60 min, same hazard group, or same street when there's no exact spot). Every report stays its own row and the linked event says why. Duplicate webhooks are ingested once.
+- **Risk is evidence-only:** hazard base, danger phrases the caller actually said, independent callers, and the latest worse/better answer. No-answer, missing consent and unaccepted time add nothing; they are debts.
+- **Ladder:** nudge → default on-call owner from `seeds/oncall.json` (proposed, not accepted; a missing roster entry is flagged, never invented) → callback **only** to a caller with `callback_ok=true`, max 2 attempts. Acknowledge (receipt only) and Accept are separate human actions.
+- **Critical alerts** (`critical_alerts[]`, uncapped): someone in danger, or a resident says worse (evidence); or high risk + unaccepted + unreachable/no consent (labelled "unknown", never "worse"). Only a human close clears one.
+- Human Accept, Acknowledge and Close endpoints work; phone numbers are masked in every API response.
 - React renders fixture or live state: departments, ranked supervisor top 10, incident detail, and twist controls.
 - `backend/tests/test_contracts.py` protects the **current** fixture-to-contract compatibility.
-- Verified on `phase0/geography` (Windows, Python 3.13): backend **23 passed, 1 XFAIL** (the B4 linker target) and `npm run build` passes. An earlier Mac run reported 14 passed, 1 XFAIL before the geography tests were added. Live `VITE_API=live` integration is not yet verified.
+- Verified on `backend` (Windows, Python 3.13): backend **50 passed** (engine rules in `tests/test_engine.py`), `npm run build` passes, and a live `CALL_MODE=simulate` server runs the storm-night ladder end to end. Live `VITE_API=live` dashboard integration is not yet verified.
 
-**Planned / not implemented:** incident linking (B4), deterministic physical-risk scoring (B5), escalation ladder (B7–B10), department silence (B12), twists (B13–B15), authenticated Retell mapping (A3/A9), **callback consent persisted and enforced**, an explicit **acknowledged** state, and an **always-visible critical-alert lane**.
+**Planned / not implemented:** department silence (B12), twists (B13–B15), timed seed replay (B2), authenticated Retell mapping and signature check (A3/A9), and the dashboard side of acknowledgment and the critical-alert lane (C1, C7, C8). The backend contract for consent, acknowledgment and critical alerts is in place; the dashboard types and fixtures already carry the new fields.
 
 ### Phase 0 → Phase 1 integration gates
 

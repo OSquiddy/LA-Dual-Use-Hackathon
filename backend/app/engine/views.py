@@ -23,12 +23,13 @@ def incident_view(s: Session, incident: Incident) -> IncidentView:
     report_count = s.exec(select(func.count()).select_from(Report).where(Report.incident_id == incident.id)).one()
     debts = s.exec(select(Debt).where(Debt.incident_id == incident.id, col(Debt.cleared_at).is_(None))).all()
     last_event = s.exec(select(Event).where(Event.incident_id == incident.id).order_by(col(Event.id).desc())).first()
+    why = incident.critical_reason if incident.critical else (last_event.reason if last_event else "")
     return IncidentView(
         id=incident.id,
         title=incident.title,
         hazard_type=incident.hazard_type,
         status=incident.status,
-        ladder_step=incident.ladder_step,
+        ladder_step=5 if incident.critical else incident.ladder_step,
         risk_score=incident.risk_score,
         report_count=report_count,
         department=assignment.department if assignment else None,
@@ -36,9 +37,11 @@ def incident_view(s: Session, incident: Incident) -> IncidentView:
         accepted=bool(assignment and assignment.accepted_at),
         next_step_at=from_db(incident.next_step_at),
         debts=[DebtView(kind=d.kind, label=d.label) for d in debts],
-        why=last_event.reason if last_event else "",
+        why=why or "",
         lat=incident.lat,
         lng=incident.lng,
+        acknowledged=bool(assignment and assignment.acknowledged_at),
+        critical=incident.critical,
     )
 
 
@@ -54,16 +57,20 @@ def incident_detail_view(s: Session, incident: Incident) -> IncidentDetailView:
             ReportView(
                 id=r.id,
                 call_id=r.call_id,
-                phone=r.phone,
+                phone=mask_phone(r.phone),
                 location_text=r.location_text,
                 hazard_type=r.hazard_type,
                 danger_words=r.danger_words,
                 transcript=r.transcript,
                 created_at=from_db(r.created_at),
+                callback_ok=r.callback_ok,
             )
             for r in reports
         ],
-        events=[EventView(type=e.type, reason=e.reason, at=from_db(e.at)) for e in events],
+        events=[
+            EventView(type=e.type, reason=e.reason, at=from_db(e.at), actor=e.actor, evidence=e.evidence)
+            for e in events
+        ],
         callbacks=[
             CallbackView(
                 attempt_no=c.attempt_no,
@@ -80,6 +87,9 @@ def incident_detail_view(s: Session, incident: Incident) -> IncidentDetailView:
             assigned_at=from_db(assignment.assigned_at),
             accepted_at=from_db(assignment.accepted_at),
             default_owner_at=from_db(assignment.default_owner_at),
+            acknowledged_at=from_db(assignment.acknowledged_at),
+            acknowledged_by=assignment.acknowledged_by,
+            accepted_by=assignment.accepted_by,
         )
         if assignment
         else None,
@@ -98,4 +108,10 @@ def state_view(s: Session) -> StateView:
         supervisor_queue=supervisor.queue(s),
         departments=silence.department_stats(s),
         alerts=silence.alerts(s),
+        critical_alerts=supervisor.critical_alerts(s),
     )
+
+
+def mask_phone(phone: str | None) -> str | None:
+    """The dashboard never shows a full resident number."""
+    return f"•••{phone[-4:]}" if phone else None

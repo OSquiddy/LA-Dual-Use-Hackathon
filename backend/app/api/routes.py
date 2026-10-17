@@ -4,6 +4,7 @@ from sqlmodel import Session
 
 from app.contracts import (
     AcceptIn,
+    AcknowledgeIn,
     CloseIn,
     IncidentDetailView,
     IncidentView,
@@ -35,6 +36,13 @@ def get_state(s: Session = Depends(get_session)):
 @router.get("/incidents/{incident_id}", response_model=IncidentDetailView)
 def get_incident(incident_id: int, s: Session = Depends(get_session)):
     return views.incident_detail_view(s, _incident_or_404(s, incident_id))
+
+
+@router.post("/incidents/{incident_id}/acknowledge", response_model=IncidentView)
+def acknowledge_incident(incident_id: int, body: AcknowledgeIn, s: Session = Depends(get_session)):
+    incident = _incident_or_404(s, incident_id)
+    ladder.acknowledge(s, incident, body.by)
+    return views.incident_view(s, incident)
 
 
 @router.post("/incidents/{incident_id}/accept", response_model=IncidentView)

@@ -41,10 +41,14 @@ DEMO_RESIDENT_PHONE = os.getenv("DEMO_RESIDENT_PHONE", "")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")  # optional; the engine must work without it
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 
+LADDER_ENABLED = os.getenv("LADDER_ENABLED", "1") != "0"  # tests drive the ladder by hand
 LADDER_TICK_S = 2
 LINK_RADIUS_M = 300
 LINK_WINDOW_MIN = 60
 SUPERVISOR_QUEUE_SIZE = 10
+SUPERVISOR_MIN_RISK = 40  # unaccepted cases below this stay with their department
+HIGH_RISK_THRESHOLD = 60  # high risk + no way to reach the caller -> supervisor review
+MAX_CALLBACK_ATTEMPTS = 2
 DEPT_SILENCE_MIN_ASSIGNED = 5
 
 HAZARD_GROUPS = {
@@ -53,6 +57,9 @@ HAZARD_GROUPS = {
     "power": {"downed_line", "outage"},
 }
 HAZARD_TYPES = sorted({h for group in HAZARD_GROUPS.values() for h in group} | {"other"})
+
+# Different reports in one group add up to a bigger incident: drain + road water + stalled car = flood.
+EMERGING_HAZARD = {"water": "flood"}
 
 HAZARD_LABELS = {
     "flood": "Flooding",

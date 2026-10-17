@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_health(client):
     assert client.get("/health").json()["ok"] is True
 
@@ -17,7 +14,6 @@ def test_gazetteer_geocodes_seed_locations(client):
     assert not any(d["kind"] == "location" for i in state["incidents"] for d in i["debts"])
 
 
-@pytest.mark.xfail(reason="TODO(B4): linker merges related reports", strict=True)
 def test_storm_night_links_into_one_incident(client):
     incidents = client.get("/api/state").json()["incidents"]
     assert len(incidents) == 1 and incidents[0]["report_count"] == 3
@@ -41,7 +37,7 @@ def test_simulated_callback_is_recorded(client):
     incident_id = client.get("/api/state").json()["incidents"][0]["id"]
     detail = client.post(f"/api/incidents/{incident_id}/simulate-callback", json={"outcome": "worse"}).json()
     assert detail["callbacks"][-1]["outcome"] == "worse"
-    assert "resident says worse" in detail["why"]
+    assert any("resident says worse" in e["reason"] for e in detail["events"])
 
 
 def test_unknown_twist_is_404(client):

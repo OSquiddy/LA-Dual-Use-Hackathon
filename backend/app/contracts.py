@@ -25,6 +25,7 @@ class ReportIn(BaseModel):
     hazard_type: str  # one of config.HAZARD_TYPES
     danger_words: list[str] = []
     anyone_in_danger: bool = False
+    callback_ok: bool = False  # True only for a clear yes; anything else means no outbound call
     transcript: str = ""
     created_at: datetime
 
@@ -42,7 +43,7 @@ class CallbackOutcome(BaseModel):
 # --- Engine -> dashboard ---------------------------------------------------------------------
 
 class DebtView(BaseModel):
-    kind: str  # location | caller_unreachable | no_owner | no_update
+    kind: str  # location | caller_unreachable | no_owner | no_update | consent_unknown
     label: str
 
 
@@ -51,17 +52,19 @@ class IncidentView(BaseModel):
     title: str
     hazard_type: str
     status: Status
-    ladder_step: int  # 1 assigned · 2 nudge · 3 default owner · 4 callback · 5 supervisor
-    risk_score: int
+    ladder_step: int  # 1 assigned · 2 nudge · 3 default owner · 4 callback · 5 supervisor (= critical)
+    risk_score: int  # physical risk from evidence only; never moved by time or silence
     report_count: int
     department: str | None
-    owner: str | None
+    owner: str | None  # proposed (default on-call) or accepting owner; see `accepted`
     accepted: bool
     next_step_at: datetime | None
     debts: list[DebtView]
     why: str
     lat: float | None
     lng: float | None
+    acknowledged: bool = False  # receipt only; never implies accepted
+    critical: bool = False  # also listed in StateView.critical_alerts
 
 
 class DepartmentView(BaseModel):
@@ -77,6 +80,19 @@ class AlertView(BaseModel):
     text: str
 
 
+class CriticalAlertView(BaseModel):
+    """Pinned safety alert. Never capped by the top 10; stays until a human closes the case."""
+
+    incident_id: int
+    title: str
+    reason: str
+    quote: str = ""  # the resident's own words behind the alert, when there are any
+    evidence: list[str] = []  # source refs, e.g. ["report:3", "callback:2"]
+    since: datetime
+    accepted: bool = False
+    owner: str | None = None
+
+
 class TwistsView(BaseModel):
     dept_silent: bool = False
     surge: bool = False
@@ -89,26 +105,30 @@ class StateView(BaseModel):
     timing_profile: str
     twists: TwistsView
     incidents: list[IncidentView]
-    supervisor_queue: list[int]  # incident ids, highest risk first
+    supervisor_queue: list[int]  # incident ids, highest risk first, capped at 10
     departments: list[DepartmentView]
     alerts: list[AlertView]
+    critical_alerts: list[CriticalAlertView] = []  # uncapped, shown apart from the top 10
 
 
 class ReportView(BaseModel):
     id: int
     call_id: str
-    phone: str | None
+    phone: str | None  # masked, e.g. "•••0103"
     location_text: str | None
     hazard_type: str
     danger_words: list[str]
     transcript: str
     created_at: datetime
+    callback_ok: bool = False
 
 
 class EventView(BaseModel):
     type: str
     reason: str
     at: datetime
+    actor: str = "engine"  # engine | resident | a named person
+    evidence: list[str] = []  # source refs, e.g. ["report:3"]
 
 
 class CallbackView(BaseModel):
@@ -125,6 +145,9 @@ class AssignmentView(BaseModel):
     assigned_at: datetime
     accepted_at: datetime | None
     default_owner_at: datetime | None
+    acknowledged_at: datetime | None = None
+    acknowledged_by: str | None = None
+    accepted_by: str | None = None
 
 
 class IncidentDetailView(IncidentView):
@@ -138,6 +161,10 @@ class IncidentDetailView(IncidentView):
 
 class AcceptIn(BaseModel):
     owner: str = Field(min_length=1)
+
+
+class AcknowledgeIn(BaseModel):
+    by: str = Field(min_length=1)
 
 
 class CloseIn(BaseModel):

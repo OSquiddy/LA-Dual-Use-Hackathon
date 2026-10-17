@@ -4,71 +4,80 @@
   "hazard_type": "flood",
   "status": "escalated",
   "ladder_step": 5,
-  "risk_score": 82,
+  "risk_score": 100,
   "report_count": 3,
   "department": "Street Services",
   "owner": "J. Ramirez (on-call)",
   "accepted": false,
   "next_step_at": null,
   "debts": [
-    { "kind": "location", "label": "Exact location unclear" },
-    { "kind": "caller_unreachable", "label": "1 caller unreachable" },
-    { "kind": "no_owner", "label": "No one has accepted" }
+    { "kind": "no_owner", "label": "Assigned to J. Ramirez (on-call); not accepted yet" }
   ],
-  "why": "Unowned 6 min · resident says worse · 1 caller unreachable",
+  "why": "Resident says it's worse, someone in danger",
   "lat": 34.106094,
   "lng": -118.199577,
+  "acknowledged": false,
+  "critical": true,
   "reports": [
     {
       "id": 1,
       "call_id": "seed-storm-1",
-      "phone": "+13235550101",
+      "phone": "•••0101",
       "location_text": "N Figueroa St and Avenue 52",
       "hazard_type": "blocked_drain",
       "danger_words": [],
       "transcript": "The storm drain on the corner of Figueroa and Avenue 52 is completely blocked and water is pooling.",
-      "created_at": "2026-10-18T02:05:05Z"
+      "created_at": "2026-10-18T02:05:05Z",
+      "callback_ok": false
     },
     {
       "id": 2,
       "call_id": "seed-storm-2",
-      "phone": "+13235550102",
+      "phone": "•••0102",
       "location_text": "Figueroa near Avenue 53",
       "hazard_type": "water_on_road",
       "danger_words": [],
       "transcript": "There's water all the way across Figueroa near Avenue 53. Cars are slowing right down.",
-      "created_at": "2026-10-18T02:08:05Z"
+      "created_at": "2026-10-18T02:08:05Z",
+      "callback_ok": false
     },
     {
       "id": 3,
       "call_id": "seed-storm-3",
-      "phone": "+13235550103",
+      "phone": "•••0103",
       "location_text": "Avenue 54 by Figueroa",
       "hazard_type": "stalled_vehicle",
       "danger_words": ["car stuck"],
       "transcript": "A car is stuck in the water by Avenue 54. The driver got out but the water keeps coming.",
-      "created_at": "2026-10-18T02:11:05Z"
+      "created_at": "2026-10-18T02:11:05Z",
+      "callback_ok": true
     }
   ],
   "events": [
-    { "type": "assigned", "reason": "Sent to Street Services; waiting for Accept", "at": "2026-10-18T02:05:05Z" },
-    { "type": "linked", "reason": "New report linked: Figueroa near Avenue 53", "at": "2026-10-18T02:08:05Z" },
-    { "type": "linked", "reason": "New report linked: Avenue 54 by Figueroa", "at": "2026-10-18T02:11:05Z" },
-    { "type": "nudge", "reason": "Not accepted after 15 s; reminder sent to Street Services", "at": "2026-10-18T02:11:20Z" },
-    { "type": "default_owner", "reason": "Still not accepted; assigned to J. Ramirez (on-call)", "at": "2026-10-18T02:11:35Z" },
-    { "type": "callback", "reason": "Callback #1: no answer", "at": "2026-10-18T02:12:20Z" },
-    { "type": "callback", "reason": "Callback #2: resident says worse — Water is at the curb and rising", "at": "2026-10-18T02:13:40Z" },
-    { "type": "escalated", "reason": "Unowned 6 min · resident says worse · 1 caller unreachable", "at": "2026-10-18T02:13:41Z" }
+    { "type": "assigned", "reason": "Sent to Street Services; waiting for Accept", "at": "2026-10-18T02:05:05Z", "actor": "engine", "evidence": ["report:1"] },
+    { "type": "linked", "reason": "Linked report #2 (Figueroa near Avenue 53): 124 m from the first report, 3 min after the last, same water hazard group", "at": "2026-10-18T02:08:05Z", "actor": "engine", "evidence": ["report:2"] },
+    { "type": "linked", "reason": "Linked report #3 (Avenue 54 by Figueroa): 247 m from the first report, 3 min after the last, same water hazard group", "at": "2026-10-18T02:11:05Z", "actor": "engine", "evidence": ["report:3"] },
+    { "type": "nudge", "reason": "Not accepted after 15 s; reminder sent to Street Services", "at": "2026-10-18T02:11:20Z", "actor": "engine", "evidence": [] },
+    { "type": "default_owner", "reason": "Still not accepted; proposed owner J. Ramirez (on-call), not accepted yet", "at": "2026-10-18T02:11:35Z", "actor": "engine", "evidence": [] },
+    { "type": "callback_requested", "reason": "Callback #1: calling the resident who gave permission", "at": "2026-10-18T02:11:50Z", "actor": "engine", "evidence": ["report:3"] },
+    { "type": "callback", "reason": "Callback #1: no answer — status unknown, not worse", "at": "2026-10-18T02:12:20Z", "actor": "engine", "evidence": ["callback:1"] },
+    { "type": "critical", "reason": "Supervisor review: High risk (70), still unaccepted, caller unreachable; current conditions unknown, not confirmed worse", "at": "2026-10-18T02:12:20Z", "actor": "engine", "evidence": [] },
+    { "type": "callback_requested", "reason": "Callback #2: calling the resident who gave permission", "at": "2026-10-18T02:12:40Z", "actor": "engine", "evidence": ["report:3"] },
+    { "type": "callback", "reason": "Callback #2: resident says worse — Water is at the curb and rising", "at": "2026-10-18T02:13:40Z", "actor": "resident", "evidence": ["callback:2"] },
+    { "type": "critical", "reason": "Supervisor review: Resident says it's worse, someone in danger", "at": "2026-10-18T02:13:41Z", "actor": "resident", "evidence": ["callback:2"] }
   ],
   "callbacks": [
-    { "attempt_no": 1, "outcome": "no_answer", "danger": false, "summary": "", "called_at": "2026-10-18T02:12:05Z" },
-    { "attempt_no": 2, "outcome": "worse", "danger": true, "summary": "Water is at the curb and rising", "called_at": "2026-10-18T02:13:20Z" }
+    { "attempt_no": 1, "outcome": "no_answer", "danger": false, "summary": "", "called_at": "2026-10-18T02:11:50Z" },
+    { "attempt_no": 2, "outcome": "worse", "danger": true, "summary": "Water is at the curb and rising", "called_at": "2026-10-18T02:12:40Z" }
   ],
   "assignment": {
     "department": "Street Services",
     "owner": "J. Ramirez (on-call)",
     "assigned_at": "2026-10-18T02:05:05Z",
     "accepted_at": null,
-    "default_owner_at": "2026-10-18T02:11:35Z"
+    "default_owner_at": "2026-10-18T02:11:35Z",
+    "acknowledged_at": null,
+    "acknowledged_by": null,
+    "accepted_by": null
   }
 }

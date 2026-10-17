@@ -1,7 +1,7 @@
 {
   "name": "storm_night",
   "domain": "storm",
-  "_note": "Three related-but-different reports on one street. B4's linker should merge them into ONE incident. Phone numbers are fictional 555 numbers; the demo_resident report gets DEMO_RESIDENT_PHONE from .env.",
+  "_note": "Three related-but-different reports on one street. B4's linker should merge them into ONE incident. Phone numbers are fictional 555 numbers; the demo_resident report gets DEMO_RESIDENT_PHONE from .env and is the only one with callback consent.",
   "reports": [
     {
       "offset_s": -540,
@@ -11,6 +11,7 @@
       "hazard_type": "blocked_drain",
       "danger_words": [],
       "anyone_in_danger": false,
+      "callback_ok": false,
       "transcript": "The storm drain on the corner of Figueroa and Avenue 52 is completely blocked and water is pooling."
     },
     {
@@ -21,6 +22,7 @@
       "hazard_type": "water_on_road",
       "danger_words": [],
       "anyone_in_danger": false,
+      "callback_ok": false,
       "transcript": "There's water all the way across Figueroa near Avenue 53. Cars are slowing right down."
     },
     {
@@ -32,6 +34,7 @@
       "hazard_type": "stalled_vehicle",
       "danger_words": ["car stuck"],
       "anyone_in_danger": false,
+      "callback_ok": true,
       "transcript": "A car is stuck in the water by Avenue 54. The driver got out but the water keeps coming."
     }
   ]

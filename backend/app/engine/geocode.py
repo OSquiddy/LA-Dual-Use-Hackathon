@@ -52,5 +52,13 @@ def geocode(location_text: str | None) -> GeoHit | None:
             re.search(rf"\b{re.escape(cross)}\b", text) for cross in place["cross"]
         ):
             return GeoHit(place["name"], place["lat"], place["lng"], place["area"])
-    # TODO(B3): fuzzy match, street-only fallback, optional LLM cleanup of messy location text
+    # TODO(B3): fuzzy match, optional LLM cleanup of messy location text
     return None
+
+
+def streets_in(location_text: str | None) -> set[str]:
+    """Known gazetteer streets named in the text; the linker's fallback when there is no exact spot."""
+    if not location_text:
+        return set()
+    text = _normalize(location_text)
+    return {p["street"] for p in _gazetteer() if re.search(rf"\b{re.escape(p['street'])}\b", text)}
