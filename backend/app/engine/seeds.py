@@ -9,7 +9,31 @@ from app.engine.ingest import ingest_report
 
 
 def seed_exists(name: str) -> bool:
-    return name.isidentifier() and (SEEDS_DIR / f"{name}.json").exists()
+    try:
+        prepare_seed(name)
+        return True
+    except (ValueError, OSError, KeyError, TypeError):
+        return False
+
+
+def prepare_seed(name: str) -> tuple[str, list[ReportIn]]:
+    """Validate every row before the caller can erase any existing data."""
+    if not name.isidentifier():
+        raise ValueError("Invalid scenario name")
+    data = json.loads((SEEDS_DIR / f"{name}.json").read_text(encoding="utf-8"))
+    if not isinstance(data, dict) or not isinstance(data.get("reports"), list) or not data["reports"]:
+        raise ValueError("Not a report scenario")
+    now = datetime.now(timezone.utc)
+    reports = []
+    for row in data["reports"]:
+        phone = DEMO_RESIDENT_PHONE if row.get("demo_resident") and DEMO_RESIDENT_PHONE else row.get("phone")
+        reports.append(ReportIn.model_validate(dict(
+            row, source="seed", phone=phone,
+            created_at=now + timedelta(seconds=row.get("offset_s", 0)),
+        )))
+    if len({r.call_id for r in reports}) != len(reports):
+        raise ValueError("Duplicate scenario call IDs")
+    return data.get("domain", "storm"), reports
 
 
 def load_seed(name: str) -> int:
@@ -18,24 +42,8 @@ def load_seed(name: str) -> int:
     The report marked "demo_resident" gets DEMO_RESIDENT_PHONE so the live callback rings a teammate.
     TODO(B2): replay rows with a positive offset_s over time (needed for the surge twist).
     """
-    data = json.loads((SEEDS_DIR / f"{name}.json").read_text(encoding="utf-8"))
-    twists.reset(domain=data.get("domain", "storm"))
-    now = datetime.now(timezone.utc)
-    for row in data["reports"]:
-        phone = DEMO_RESIDENT_PHONE if row.get("demo_resident") and DEMO_RESIDENT_PHONE else row.get("phone")
-        ingest_report(
-            ReportIn(
-                source="seed",
-                call_id=row["call_id"],
-                phone=phone,
-                location_text=row.get("location_text"),
-                lat=row.get("lat"),
-                lng=row.get("lng"),
-                hazard_type=row["hazard_type"],
-                danger_words=row.get("danger_words", []),
-                anyone_in_danger=row.get("anyone_in_danger", False),
-                transcript=row.get("transcript", ""),
-                created_at=now + timedelta(seconds=row.get("offset_s", 0)),
-            )
-        )
-    return len(data["reports"])
+    domain, reports = prepare_seed(name)
+    twists.reset(domain=domain)
+    for report in reports:
+        ingest_report(report)
+    return len(reports)

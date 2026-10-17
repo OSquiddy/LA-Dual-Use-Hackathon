@@ -5,11 +5,14 @@ Payload field names below are our best reading of Retell's docs; check them agai
 payload (save it as tests/fixtures/retell_call_analyzed.json) and fix the mapping here.
 """
 import logging
+import json
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
+from pydantic import ValidationError
 
-from app.config import HAZARD_TYPES
+from app.config import HAZARD_TYPES, RETELL_API_KEY
+from app.voice.security import verify_signature
 from app.contracts import CallbackOutcome, ReportIn
 from app.engine.ingest import ingest_report
 from app.engine.ladder import record_callback_outcome
@@ -22,17 +25,35 @@ NO_ANSWER_REASONS = {"dial_no_answer", "voicemail_reached", "dial_busy", "dial_f
 
 @router.post("/retell/webhook")
 async def retell_webhook(request: Request) -> Response:
-    # TODO(A3): verify the x-retell-signature header with RETELL_API_KEY before trusting the body.
-    body = await request.json()
-    event, call = body.get("event"), body.get("call", {})
-    log.info("retell %s %s", event, call.get("call_id"))
-
-    if event == "call_analyzed":
+    raw = await request.body()
+    if not verify_signature(raw, request.headers.get("x-retell-signature", ""), RETELL_API_KEY):
+        raise HTTPException(401, "Invalid webhook signature")
+    try:
+        body = json.loads(raw)
+        if not isinstance(body, dict) or not isinstance(body.get("event"), str):
+            raise ValueError("Expected event object")
+        event = body["event"]
+        if event != "call_analyzed":
+            return Response(status_code=204)
+        call = body.get("call")
+        if not isinstance(call, dict) or not isinstance(call.get("call_id"), str) or not call["call_id"].strip():
+            raise ValueError("Missing call ID")
         metadata = call.get("metadata") or {}
+        if not isinstance(metadata, dict):
+            raise ValueError("Invalid metadata")
         if "incident_id" in metadata:
-            record_callback_outcome(callback_from_call(call))
+            outcome = callback_from_call(call)
+            if outcome.incident_id <= 0 or outcome.attempt_no <= 0:
+                raise ValueError("Invalid callback identifiers")
         else:
-            ingest_report(intake_from_call(call))
+            report = intake_from_call(call)
+    except (ValueError, TypeError, KeyError, AttributeError, OverflowError, OSError, ValidationError):
+        # Never echo provider payloads, phone numbers, or transcripts in errors.
+        raise HTTPException(422, "Invalid webhook payload") from None
+    if "incident_id" in metadata:
+        record_callback_outcome(outcome)
+    else:
+        ingest_report(report)
     return Response(status_code=204)
 
 
@@ -46,7 +67,7 @@ def intake_from_call(call: dict) -> ReportIn:
         location_text=fields.get("location_text"),
         hazard_type=hazard if hazard in HAZARD_TYPES else "other",
         danger_words=_as_list(fields.get("danger_words")),
-        anyone_in_danger=bool(fields.get("anyone_in_danger")),
+        anyone_in_danger=_boolean(fields.get("anyone_in_danger")),
         transcript=call.get("transcript") or "",
         created_at=_call_time(call),
     )
@@ -63,7 +84,7 @@ def callback_from_call(call: dict) -> CallbackOutcome:
         call_id=call["call_id"],
         attempt_no=int(metadata.get("attempt_no", 1)),
         outcome=outcome,
-        danger=bool(fields.get("anyone_in_danger")),
+        danger=_boolean(fields.get("anyone_in_danger")),
         summary=fields.get("summary") or "",
         transcript=call.get("transcript") or "",
     )
@@ -82,3 +103,11 @@ def _call_time(call: dict) -> datetime:
     if started_ms:
         return datetime.fromtimestamp(started_ms / 1000, tz=timezone.utc)
     return datetime.now(timezone.utc)
+
+
+def _boolean(value) -> bool:
+    if value is None:
+        return False
+    if not isinstance(value, bool):
+        raise ValueError("Expected boolean")
+    return value
