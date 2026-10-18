@@ -15,7 +15,7 @@ def request_callback(incident_id: int, phone: str, attempt_no: int, vars: dict) 
     """Start an outbound callback to the resident; the outcome arrives later via the webhook.
 
     vars become Retell dynamic variables, e.g. {"location": "...", "hazard": "..."}.
-    TODO(A8): phones_down twist -> fail the call so the engine records no_answer (B14).
+    The phones_down twist is handled by the ladder before this is called (B14).
     """
     if CALL_MODE != "live":
         from app.voice import simulator

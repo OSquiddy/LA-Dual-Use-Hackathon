@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MousePointerClick, WifiOff } from "lucide-react";
 import CriticalLane from "./components/CriticalLane";
 import IncidentList from "./components/IncidentList";
@@ -17,14 +17,11 @@ export default function App() {
   const callMode = useCallMode();
   const fresh = useNewCriticalAlerts(state, notify);
 
-  // Keep a valid selection: first critical alert, else the highest-risk incident.
-  useEffect(() => {
-    if (!state) return;
-    if (selectedId !== null && state.incidents.some((i) => i.id === selectedId)) return;
-    setSelectedId(state.critical_alerts[0]?.incident_id ?? state.incidents[0]?.id ?? null);
-  }, [state, selectedId]);
-
-  const selected = state?.incidents.find((i) => i.id === selectedId) ?? null;
+  // Until the user picks one (or theirs is closed): first critical alert, else the highest-risk incident.
+  const picked = state?.incidents.find((i) => i.id === selectedId);
+  const fallbackId = state?.critical_alerts.find((a) => state.incidents.some((i) => i.id === a.incident_id))?.incident_id;
+  const selected = picked ?? state?.incidents.find((i) => i.id === fallbackId) ?? state?.incidents[0] ?? null;
+  const activeId = selected?.id ?? null;
 
   return (
     <div className="app">
@@ -51,8 +48,8 @@ export default function App() {
         <aside className="sidebar">
           {state && (
             <>
-              <CriticalLane alerts={state.critical_alerts} selectedId={selectedId} fresh={fresh} onSelect={setSelectedId} />
-              <IncidentList state={state} query={query} selectedId={selectedId} onSelect={setSelectedId} />
+              <CriticalLane alerts={state.critical_alerts} selectedId={activeId} fresh={fresh} onSelect={setSelectedId} />
+              <IncidentList state={state} query={query} selectedId={activeId} onSelect={setSelectedId} />
               {state.departments.length > 0 && (
                 <footer className="depts" aria-label="Department acceptance, last hour">
                   {state.departments.map((d) => (

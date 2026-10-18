@@ -62,10 +62,10 @@ Related reports become one incident **with separate, auditable original reports*
 
 | Decision | Current MVP commitment | Implementation status |
 | --- | --- | --- |
-| Evidence-linked incident intelligence | Retain every original call/report and show why linked | **Planned** B4; original scaffold currently creates separate incidents |
-| Verifiable accountability | Assignment ≠ acknowledgment ≠ acceptance ≠ human-verified resolution | **Scope approved; schema/UI changes pending** |
-| Consented voice follow-up | Persist `callback_ok` and prohibit outbound requests without true consent | Retell extraction tested; **backend gating not implemented** |
-| Safe triage | Worsening / reported danger is evidence; missed calls mean unknown; critical alerts never hidden by top 10 | **Scope approved; engine/dashboard changes pending** |
+| Evidence-linked incident intelligence | Retain every original call/report and show why linked | **Implemented (B4):** each report kept as its own row; link reason logged |
+| Verifiable accountability | Assignment ≠ acknowledgment ≠ acceptance ≠ human-verified resolution | **Implemented** in engine and dashboard (Acknowledge, Accept, human-only Close) |
+| Consented voice follow-up | Persist `callback_ok` and prohibit outbound requests without true consent | **Implemented and tested in simulation**; live outbound call not yet run |
+| Safe triage | Worsening / reported danger is evidence; missed calls mean unknown; critical alerts never hidden by top 10 | **Implemented:** evidence-only risk, uncapped critical-alert lane |
 | Software-only | No wireless sensing, sensors, ESP32, autonomous 911/dispatch | **Explicitly excluded** |
 | Three people in parallel | PC-A voice; PC-B engine; PC-C dashboard; shared contract approval required | **Unchanged** |
 
@@ -77,7 +77,7 @@ Related reports become one incident **with separate, auditable original reports*
 - **Resolved:** evidence suggests corrective work is done; **only an authorized human** records resolution and closes the case. Existing `status=closed` remains the implementation representation until the team agrees on additional fields.
 - **Unknown:** missing consent, missing location, unanswered call, or absent on-call mapping must remain visible as a debt, not silently interpreted as safe/resolved.
 
-**Contract migration note:** Existing `ReportIn` has no `callback_ok`, `Assignment` has no `acknowledged_at`, and current state/incident views have no dedicated persistent-critical-alert field. These are **proposed changes, not already implemented**. PC-A/PC-B/PC-C must approve shared schema/API migrations together; update backend/TypeScript/fixtures/tests in the same coordinated change.
+**Contract migration note:** Approved and implemented: `ReportIn.callback_ok`, `Assignment.acknowledged_at/by` and `accepted_by`, `POST /api/incidents/{id}/acknowledge`, `StateView.critical_alerts[]`, event `actor`/`evidence`, and masked phone numbers. Backend, TypeScript types, fixtures and contract tests were changed together. Live status by task is tracked in the *Parallel Build Plan* progress section.
 
 ## Architecture and tech stack
 
@@ -159,11 +159,11 @@ Everyone rehearses Q&A on Sunday morning; A leads the pitch, B answers technical
 
 **Weekend schedule (adjust to the event's actual deadline)**
 
-- [ ] Phase 0: three machines cloned; backend and frontend verified; coordinate shared consent/acknowledgment/critical-alert contract changes; retain Retell browser-test evidence and IDs privately; verify phone availability separately.
-- [ ] Sat by noon: verified incoming call creates a consent-tagged report and live dashboard card (using simulated calls until the webhook is authenticated).
-- [ ] Sat afternoon: linking preserves all source reports; debts, human Accept, acknowledgment state, and critical alert pane work.
-- [ ] Sat evening: consent-gated real callback to an opted-in teammate; explicit `worse` escalates and `no_answer` never implies the hazard worsened.
-- [ ] Sat night: department-silence / surge / phones-down twists; first dry run; collect fallback recording.
+- [ ] Phase 0: three machines cloned; backend and frontend verified; coordinate shared consent/acknowledgment/critical-alert contract changes; retain Retell browser-test evidence and IDs privately; verify phone availability separately. *(Contracts ✅; two of three machines verified; phone number unconfirmed.)*
+- [ ] Sat by noon: verified incoming call creates a consent-tagged report and live dashboard card (using simulated calls until the webhook is authenticated). *(Signed synthetic webhook ✅; real Retell call not yet.)*
+- [x] Sat afternoon: linking preserves all source reports; debts, human Accept, acknowledgment state, and critical alert pane work.
+- [ ] Sat evening: consent-gated real callback to an opted-in teammate; explicit `worse` escalates and `no_answer` never implies the hazard worsened. *(Engine rules ✅ in simulation; real callback not yet.)*
+- [ ] Sat night: department-silence / surge / phones-down twists; first dry run; collect fallback recording. *(Twists ✅; dry run and recording not yet.)*
 - [ ] Sun morning: fix glitches only, rehearse Q&A, freeze code 2 hours before judging.
 - [ ] Before judging: three full rehearsals of the 3-minute demo. Verify the actual event schedule with organizers.
 
@@ -290,9 +290,9 @@ The fastest way to lose credibility is one claim a judge can disprove; keep to t
 **Open questions to answer Saturday**
 
 - [x] Retell browser tests: Intake (5 fields) and Callback (3 fields) produced expected structured extraction; **not yet live integration**.
-- [ ] Verify webhook signature, event mapping, deduplication and sandbox/live Retell API behavior using the latest provider docs.
-- [ ] Decide who may authorize outbound test calls, consent retention, retry rate and test-participant contact policy.
-- [ ] Team agrees how to migrate shared `ReportIn`/SQLModel/TypeScript contracts for consent, acknowledgment and persistent critical flags.
+- [ ] Verify webhook signature, event mapping, deduplication and sandbox/live Retell API behavior using the latest provider docs. *(Signature check and deduplication ✅; event mapping still unchecked against a real payload.)*
+- [ ] Decide who may authorize outbound test calls, consent retention, retry rate and test-participant contact policy. *(Engine caps retries at 2; the people/policy decision is open.)*
+- [x] Team agrees how to migrate shared `ReportIn`/SQLModel/TypeScript contracts for consent, acknowledgment and persistent critical flags.
 - [ ] Check actual available Retell number/credit; do not assume purchasing or live outbound test completed.
 - [ ] Confirm IBM Bob prize rules **only if entering that prize**, plus any required evidence.
 - [ ] Confirm each developer's ownership, demo roles and who rehearses each Q&A category.

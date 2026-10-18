@@ -14,22 +14,106 @@ Companion to *HandoffProof — Build Plan & Judge Defense*. That file defines th
 
 ---
 
+## Progress — Oct 17, 2026 (branch `frontend`, merged backend + dashboard v2)
+
+✅ done and verified · 🟡 partly done · ❌ not started · ⚪ optional (cut list)
+
+**Verified on Windows:** backend `pytest` **147 passed** · frontend `npm run build` passes · `npm run check:readiness` **11/11** · `npm run check:phase01` **48/48** (12 consent × outcome scenarios × 4 handoff stages, rendered by the real dashboard) · live run: storm-night ladder end to end in `CALL_MODE=simulate`, Acknowledge and Accept clicked in the browser and recorded by the backend.
+
+**Phases at a glance**
+
+| Phase | Status | What's left |
+| --- | --- | --- |
+| 0 Together | 🟡 | Third machine set up; paste updated prompts into Retell; confirm phone number |
+| 1 Each piece alone | 🟡 | Engine and dashboard ✅; a **real** Retell intake call through a tunnel (A4) and a redacted real payload (A5) |
+| Sync 1 | 🟡 | Passes with signed synthetic webhooks (seed → 1 incident / 3 reports → 4th report); not yet with a live call |
+| 2 Escalation loop | 🟡 | Engine and dashboard ✅; **live outbound callback** to the opted-in teammate (A8, A9) |
+| Sync 2 | 🟡 | Simulated loop, no-consent, no-answer and human-close cases ✅ (tests + live run); live-call half open |
+| 3 Twists, fallbacks, pitch | 🟡 | Silence, surge, phones-down ✅; surge counter (C14), fallback recordings (A12, video), demo script and slides (A13, A14) |
+| Sync 3 / Phase 4 | ❌ | First full dry run, fallback video, freeze, three rehearsals |
+
+**Person A — Voice + pitch**
+
+| Task | Status | Notes |
+| --- | --- | --- |
+| A1 Intake prompt (demo-labelled, consent, 911) | ✅ | `agents/intake.md`; must be re-pasted into Retell |
+| A2 Retell extraction fields (5 + 3) | ✅ | Browser-tested in Retell |
+| A3 Signature check on raw body, duplicate protection | ✅ | `voice/security.py` (HMAC + 5-min window); duplicate intake and callback webhooks ignored |
+| A4 Real call through a tunnel | ❌ | Needs the tunnel and an opted-in teammate |
+| A5 Redacted real webhook fixture | ❌ | Only a synthetic fixture exists (`tests/fixtures/synthetic_retell_intake.json`) |
+| A6 Retell number / credit / constraints | 🟡 | Not yet confirmed |
+| A7 Callback agent prompt | ✅ | `agents/callback.md` |
+| A8 Live outbound `request_callback` | 🟡 | Code written, consent-gated by the engine; never run against Retell |
+| A9 Parse callback / no-answer payloads | 🟡 | Mapped and tested with synthetic payloads; real payload unchecked |
+| A10 Simulator + no-consent negative test | ✅ | |
+| A11 Prompt guardrails | ✅ | No impersonation, no safety claims, 911 direction |
+| A12 Consented demo recording | ❌ | |
+| A13 Demo script (`docs/pitch/demo.md`) | ❌ | |
+| A14 Slides incl. funding (potential, unverified) | ❌ | |
+| A15 Spanish callback | ⚪ | |
+
+**Person B — Engine**
+
+| Task | Status | Notes |
+| --- | --- | --- |
+| B1 Contract migration (consent, acknowledgment, critical alerts, evidence) | ✅ | Additive with defaults; `types.ts` and fixtures mirror it |
+| B2 Seeds keep every report as its own row | ✅ | Seeds validated before a destructive reset |
+| B3 Geocoding incl. "Avenue fifty two"; unresolved → debt | ✅ | |
+| B4 Linker (≤300 m, ≤60 min, hazard group, street fallback) | ✅ | Link reason logged per report |
+| B5 Evidence-only risk | ✅ | Negation-aware danger phrases; no-answer/consent/time add nothing |
+| B6 State/detail responses; 1 incident / 3 reports | ✅ | |
+| B7 Ladder timers + audit events | ✅ | |
+| B8 Default on-call owner (proposed, never invented) | ✅ | |
+| B9 Callback outcomes; no-answer = unknown | ✅ | Max 2 attempts |
+| B10 Top 10 + uncapped critical alerts | ✅ | |
+| B11 Human-only close; safety tests | ✅ | |
+| B12 Department silence, nudge suppression | ✅ | One alert per department; critical alerts unaffected |
+| B13 Surge (`surge_50.json`) | 🟡 | All 50 reports ingest at once; timed replay not built |
+| B14 Phones-down = no-answer, never worse | ✅ | |
+| B15 Port-domain seed | ⚪ | Domain twist accepts only `storm` |
+| B16 Deterministic reset | ✅ | |
+
+**Person C — Dashboard**
+
+| Task | Status | Notes |
+| --- | --- | --- |
+| C1 Layout + pinned critical lane | ✅ | Dashboard v2 (master-detail), light and dark themes |
+| C2 Polling, fixture/live switch | ✅ | |
+| C3 Cards: proposed / acknowledged / accepted | ✅ | |
+| C4 Detail: every report, evidence, audit trail | ✅ | |
+| C5 Colour: red only for critical or high risk | ✅ | |
+| C6 Error, empty, loading states | 🟡 | Done; projector check open |
+| C7 Acknowledge + Accept, no optimistic accept | ✅ | Name editable in the top bar |
+| C8 Critical alerts always visible, arrival animation | ✅ | |
+| C9 SIMULATED label on simulate buttons | ✅ | |
+| C10 Calling / consent status, masked phones | ✅ | |
+| C11 Live wiring | ✅ | Verified in a browser against FastAPI |
+| C12 Twist panel | ✅ | Domain swap not offered (B15 optional) |
+| C13 Department alert + separate critical lane | ✅ | |
+| C14 "50 reports → ~4 incidents" counter | ❌ | |
+| C15 Second-domain relabel | ⚪ | |
+| C16 Projector check, prototype label | 🟡 | Label ✅; projector open |
+
+**Definition of done:** ✅ 2 linking · ✅ 3 ownership · ✅ 5 safety · ✅ 6 human closure · ✅ 7 demo labelling · 🟡 1 input (signature ✅, real call ❌) · 🟡 4 consent (simulated ✅, live callback ❌) · 🟡 8 engineering (tests ✅; three-machine sign-off and fallback recording ❌).
+
+---
+
 ## Phase 0 — Together, one table (≈30 min with the scaffold)
 
 The scaffold repo has contracts, stubs, seeds and fixtures. **This updated scope is a plan, not a claim that all new fields exist.** Review interfaces together, record approval, then each owner builds against stable contracts. No one begins changes to shared schemas unilaterally.
 
 | # | Task | Status / output |
 | --- | --- | --- |
-| 0.1 | Clone scaffold on A, B, C; A/B run backend tests, C runs `npm run build` and dashboard | **Partial:** Mac reported 14 passed / 1 XFAIL (before geography tests); Windows on `phase0/geography`: 23 passed / 1 XFAIL and frontend build passes. Third machine not yet verified |
-| 0.2 | Confirm approximate Highland Park N Figueroa locations visually; test spoken "Avenue fifty two" normalization | **Partial:** local geography tests passed; map review and speech normalization still need verification |
-| 0.3 | Agree fictional storm-night reports, departments, and on-call contacts | Draft in `backend/seeds/storm_night.json` and `oncall.json`; **team sign-off pending** |
+| 0.1 | Clone scaffold on A, B, C; A/B run backend tests, C runs `npm run build` and dashboard | 🟡 Mac and Windows verified (Windows on `frontend`: 147 passed, build passes); third machine not yet verified |
+| 0.2 | Confirm approximate Highland Park N Figueroa locations visually; test spoken "Avenue fifty two" normalization | ✅ Transit-stop coordinates with sources; spoken-number normalization tested |
+| 0.3 | Agree fictional storm-night reports, departments, and on-call contacts | ✅ `backend/seeds/storm_night.json`, `oncall.json` (only the demo resident gives callback consent) |
 | 0.4 | Agree shared contract migration: `callback_ok`, acknowledgment event/field, critical-alert payload and evidence provenance | **Approved; implemented on `backend`:** `ReportIn.callback_ok`, `acknowledged_at/by`, `POST /acknowledge`, `critical_alerts[]`, event `actor`/`evidence`, masked phones. All additive with defaults; `types.ts` and fixtures updated |
-| 0.5 | Fixture state/detail JSON matches currently committed contracts; plan updated examples | Existing fixture contract tests passed locally; **new fields pending coordinated changes** |
-| 0.6 | Agree root `.env` and frontend `.env.local`, `CALL_MODE=simulate`, timing and no secrets in Git | Template exists; verify on all machines |
-| 0.7 | A configures Retell Intake and Callback agents (5 + 3 extracted fields), stores IDs/API key privately | **Browser-level Retell tests reported successful**; phone number/live webhook/outbound calls **not yet verified** |
-| 0.8 | Confirm safety: prototype/nonofficial voice prompt, 911 direction, opt-in calls only, no unsanctioned data collection | **Open; implement guardrails before real traffic** |
-| 0.9 | B/C smoke-test live local `VITE_API=live` against FastAPI; reset seeds; no public webhook yet | **Open** |
-| 0.10 | Team approves software-only MVP, three-person ownership, and definition of done | **Scope decided; team-wide sign-off pending** |
+| 0.5 | Fixture state/detail JSON matches currently committed contracts; plan updated examples | ✅ Fixtures carry the new fields; contract tests pass |
+| 0.6 | Agree root `.env` and frontend `.env.local`, `CALL_MODE=simulate`, timing and no secrets in Git | 🟡 Templates exist; verify on all machines |
+| 0.7 | A configures Retell Intake and Callback agents (5 + 3 extracted fields), stores IDs/API key privately | 🟡 Browser-level Retell tests passed; phone number, live webhook and outbound calls **not yet verified** |
+| 0.8 | Confirm safety: prototype/nonofficial voice prompt, 911 direction, opt-in calls only, no unsanctioned data collection | 🟡 Prompts updated in repo and webhook signatures enforced; prompts must be re-pasted into Retell; `/api/*` is still unauthenticated if the whole backend is tunnelled |
+| 0.9 | B/C smoke-test live local `VITE_API=live` against FastAPI; reset seeds; no public webhook yet | ✅ Dashboard driven against a live backend in a browser |
+| 0.10 | Team approves software-only MVP, three-person ownership, and definition of done | ✅ Contracts approved by the team |
 
 ### Repo layout
 

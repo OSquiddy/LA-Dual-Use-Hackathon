@@ -44,11 +44,15 @@ Load the storm-night scenario: `curl -X POST localhost:8000/api/demo/reset -H "c
 npm install
 test -f .env.local || cp .env.example .env.local    # set VITE_API=live for local integration
 npm run dev                          # http://localhost:5173 · press T for the twist panel
+npm run build                        # strict type-check + production build
+npm run check:readiness              # renders the real dashboard against synthetic states
 ```
+
+Full integration check (12 consent × outcome scenarios × 4 handoff stages): from `backend/`, run `HANDOFFPROOF_INTEGRATION_SNAPSHOTS=<dir> pytest tests/test_phase01_acceptance.py`, then from `frontend/` run `npm run check:phase01 -- <dir>`.
 
 Set `VITE_API=live` to poll the backend. `VITE_BACKEND_URL` can point at PC-B's machine on the same Wi-Fi (e.g. `http://192.168.1.20:8000`).
 
-**Retell Phase 0:** Intake and Callback agent prompts/extraction fields have been browser-tested. **Do not expose the public webhook yet**: `backend/app/voice/webhooks.py` still needs signature verification, and `callback_ok` is not yet persisted or enforced in the outbound flow. Keep `CALL_MODE=simulate`. After the safety gates pass, PC-A can use `cloudflared tunnel --url http://localhost:8000` (or `ngrok http 8000`) and configure `<url>/retell/webhook`. Only call explicitly consenting test participants.
+**Retell:** Intake and Callback prompts and extraction fields are browser-tested. The webhook now verifies Retell's signature on the raw body and `callback_ok` is persisted and enforced, so no caller is called back without a clear yes. **Before exposing anything publicly:** tunnelling port 8000 also exposes `/api/*` (including `/api/demo/reset`), which has no authentication yet. Add a token or expose only `/retell/webhook` first. Keep `CALL_MODE=simulate` until then, and only call explicitly consenting test participants.
 
 ## How the pieces join
 
@@ -64,18 +68,21 @@ Retell callback ◄── request_callback(...) ◄──── ladder.tick() ev
 
 `CALL_MODE=simulate` replaces the outbound Retell API with `voice/simulator.py`; it does not establish real consent or verify live webhook signatures. B and C can develop against synthetic data while A implements validated voice integration.
 
-## What works today (scaffold)
+## What works today
 
-- **Engine (B, `backend` branch):** related reports link into one incident (≤300 m from its first report, ≤60 min, same hazard group, or same street when there's no exact spot). Every report stays its own row and the linked event says why. Duplicate webhooks are ingested once.
+Per-task status lives in the [Parallel Build Plan](HandoffProof%20—%20Parallel%20Build%20Plan%20(3%20Computers).md) progress section.
+
+- **Engine:** related reports link into one incident (≤300 m from its first report, ≤60 min, same hazard group, or same street when there's no exact spot). Every report stays its own row and the linked event says why. Duplicate webhooks are ingested once.
 - **Risk is evidence-only:** hazard base, danger phrases the caller actually said, independent callers, and the latest worse/better answer. No-answer, missing consent and unaccepted time add nothing; they are debts.
 - **Ladder:** nudge → default on-call owner from `seeds/oncall.json` (proposed, not accepted; a missing roster entry is flagged, never invented) → callback **only** to a caller with `callback_ok=true`, max 2 attempts. Acknowledge (receipt only) and Accept are separate human actions.
 - **Critical alerts** (`critical_alerts[]`, uncapped): someone in danger, or a resident says worse (evidence); or high risk + unaccepted + unreachable/no consent (labelled "unknown", never "worse"). Only a human close clears one.
+- **Twists:** department silence (one alert per department, per-ticket reminders suppressed), call surge (`surge_50.json`), phones down (failed calls = unknown, never worse).
+- **Voice:** signed Retell webhooks (HMAC on the raw body, 5-minute window); duplicate intake and callback deliveries are ignored; consent is mapped from Retell's `callback_ok`.
 - Human Accept, Acknowledge and Close endpoints work; phone numbers are masked in every API response.
-- React renders fixture or live state: departments, ranked supervisor top 10, incident detail, and twist controls.
-- `backend/tests/test_contracts.py` protects the **current** fixture-to-contract compatibility.
-- Verified on `backend` (Windows, Python 3.13): backend **50 passed** (engine rules in `tests/test_engine.py`), `npm run build` passes, and a live `CALL_MODE=simulate` server runs the storm-night ladder end to end. Live `VITE_API=live` dashboard integration is not yet verified.
+- **Dashboard v2:** master-detail incident command view with light and dark themes; pinned critical lane, supervisor top 10, accountability chain, resident follow-up with SIMULATED controls, audit trail, original reports, human-only close, demo twist menu.
+- Verified on `frontend` (Windows, Python 3.13): backend **147 passed**, `npm run build` passes, `check:readiness` 11/11, `check:phase01` 48/48, and the dashboard was driven in a browser against a live `CALL_MODE=simulate` backend.
 
-**Planned / not implemented:** department silence (B12), twists (B13–B15), timed seed replay (B2), authenticated Retell mapping and signature check (A3/A9), and the dashboard side of acknowledgment and the critical-alert lane (C1, C7, C8). The backend contract for consent, acknowledgment and critical alerts is in place; the dashboard types and fixtures already carry the new fields.
+**Not done yet:** a real Retell intake call and live outbound callback (A4, A5, A8, A9), auth on `/api/*` before tunnelling, surge counter on screen (C14), timed surge replay, projector check, fallback recordings, demo script and slides. Optional: port-domain seed (B15), Spanish callback.
 
 ### Phase 0 → Phase 1 integration gates
 

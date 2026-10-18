@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --host",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --host"
+    "preview": "vite preview --host",
+    "check:readiness": "node scripts/check-readiness.cjs",
+    "check:phase01": "node scripts/check-phase01-integration.cjs"
   },
   "dependencies": {
     "lucide-react": "^0.453.0",
