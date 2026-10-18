@@ -17,7 +17,7 @@ from sqlmodel import Session, col, func, select
 from app.config import HAZARD_LABELS, HIGH_RISK_THRESHOLD, MAX_CALLBACK_ATTEMPTS, TIMING
 from app.contracts import CallbackOutcome
 from app.db import engine
-from app.engine import critical, oncall, risk
+from app.engine import critical, oncall, risk, silence, twists
 from app.engine.audit import clear_debt, log_event, open_debt
 from app.models import Assignment, Callback, Incident, Report
 from app.timeutil import utcnow
@@ -51,8 +51,10 @@ def tick(now: datetime | None = None) -> None:
 
 def _nudge(s: Session, incident: Incident, now: datetime) -> None:
     department = latest_assignment(s, incident.id).department
-    # TODO(B12): skip per-ticket nudges while this department is flagged silent.
-    log_event(s, incident.id, "nudge", f"Not accepted after {_fmt(TIMING.nudge_s)}; reminder sent to {department}")
+    if not any(d.name == department and d.silent for d in silence.department_stats(s)):
+        log_event(s, incident.id, "nudge", f"Not accepted after {_fmt(TIMING.nudge_s)}; reminder sent to {department}")
+    else:
+        log_event(s, incident.id, "nudge_suppressed", f"Department alert replaces reminder to {department}")
     incident.ladder_step = 2
     incident.next_step_at = now + timedelta(seconds=TIMING.default_owner_s - TIMING.nudge_s)
 
@@ -96,8 +98,9 @@ def _follow_up(s: Session, incident: Incident, now: datetime) -> None:
     if attempts >= MAX_CALLBACK_ATTEMPTS:
         return
     attempt_no = attempts + 1
-    # TODO(B14): phones_down twist -> treat the attempt as failed (no_answer) without calling.
     try:
+        if twists.current().phones_down:
+            raise ConnectionError("Simulated phone outage")
         call_id = callbacks.request_callback(
             incident.id,
             target.phone,
@@ -134,16 +137,36 @@ def _follow_up(s: Session, incident: Incident, now: datetime) -> None:
 
 def record_callback_outcome(o: CallbackOutcome) -> None:
     """Contract function, called by A's callback webhook and the simulator. Idempotent per call_id."""
+    _record_callback_outcome(o, require_existing=False)
+
+
+def record_scheduled_callback_outcome(o: CallbackOutcome) -> None:
+    """A delayed simulator result is valid only for its still-pending database call.
+
+    Reset removes that row, so an old timer cannot create a result on a reused incident ID.
+    """
+    _record_callback_outcome(o, require_existing=True)
+
+
+def _record_callback_outcome(o: CallbackOutcome, *, require_existing: bool) -> None:
     with Session(engine) as s:
         incident = s.get(Incident, o.incident_id)
         if incident is None:
             return
         callback = s.exec(select(Callback).where(Callback.call_id == o.call_id)).first()
         if callback is None:
+            if require_existing:
+                return
+            attempt = s.exec(select(Callback).where(
+                Callback.incident_id == o.incident_id, Callback.attempt_no == o.attempt_no,
+            )).first()
+            if attempt is not None:
+                return  # A different call ID cannot overwrite this attempt's evidence.
             callback = Callback(incident_id=o.incident_id, call_id=o.call_id, attempt_no=o.attempt_no)
             s.add(callback)
-        elif callback.outcome is not None:
-            return  # duplicate webhook
+        elif (callback.incident_id != o.incident_id or callback.attempt_no != o.attempt_no
+              or callback.outcome is not None):
+            return  # Wrong case, wrong attempt, or a duplicate delivery.
         callback.outcome = o.outcome
         callback.danger = o.danger
         callback.summary = o.summary

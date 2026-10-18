@@ -2,6 +2,7 @@ import { useState } from "react";
 import { API_MODE } from "./api";
 import { useHandoffState } from "./useHandoffState";
 import AlertBanner from "./components/AlertBanner";
+import CriticalAlerts from "./components/CriticalAlerts";
 import DepartmentQueue from "./components/DepartmentQueue";
 import IncidentDetail from "./components/IncidentDetail";
 import SupervisorQueue from "./components/SupervisorQueue";
@@ -26,6 +27,7 @@ export default function App() {
 
       {error && <div className="error">Backend unreachable: {error}</div>}
       {state && <AlertBanner alerts={state.alerts} />}
+      {state && <CriticalAlerts alerts={state.critical_alerts} onOpen={setOpenId} />}
 
       {state ? (
         <main className="panes">

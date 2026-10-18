@@ -61,16 +61,43 @@ def breakdown(s: Session, incident: Incident) -> list[Factor]:
 
 
 def supported_danger(report: Report) -> list[str]:
-    """Danger phrases backed by the caller's own words: every word of the phrase is in the transcript.
+    """Require phrase words in order in one clause, without a nearby explicit negation.
 
     Guards against an extracted "trapped" when the caller never said it. Retell's anyone_in_danger
     flag counts on its own: we over-flag a person at risk on purpose.
     """
-    said = set(_words(report.transcript))
-    phrases = [p for p in report.danger_words if _words(p) and set(_words(p)) <= said]
+    clauses = re.split(r"[.!?;,\n]|\b(?:but|however|yet)\b", report.transcript.lower().replace("’", "'"))
+    phrases = [p for p in report.danger_words if _affirmed(p, clauses)]
     if report.anyone_in_danger:
         phrases.append("someone in danger")
     return phrases
+
+
+def _affirmed(phrase: str, clauses: list[str]) -> bool:
+    terms = _words(phrase)
+    if not terms:
+        return False
+    negations = {"no", "not", "nobody", "none", "never", "isn't", "aren't", "wasn't", "weren't"}
+    for clause in clauses:
+        words = _words(clause)
+        for start, word in enumerate(words):
+            if word != terms[0]:
+                continue
+            end = start
+            for term in terms[1:]:
+                try:
+                    end = words.index(term, end + 1)
+                except ValueError:
+                    break
+            else:
+                context = words[max(0, start - 4):end]
+                negated = any(
+                    token in negations and not (token == "not" and context[i + 1:i + 2] == ["only"])
+                    for i, token in enumerate(context)
+                )
+                if not negated:
+                    return True
+    return False
 
 
 def _words(text: str) -> list[str]:

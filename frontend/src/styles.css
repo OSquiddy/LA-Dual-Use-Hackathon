@@ -73,3 +73,9 @@ button:hover { border-color: var(--accent); }
 
 .twists { position: fixed; left: 20px; bottom: 20px; background: var(--panel); border: 1px solid var(--accent); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; }
 .twists label { display: flex; gap: 8px; align-items: center; }
+
+.critical-alerts { padding: 14px 20px 0; display: grid; gap: 10px; }
+.critical-alerts > h2 { color: #ffb4b6; font-size: 18px; }
+.critical-alert { border: 1px solid var(--danger); border-left-width: 4px; border-radius: 8px; background: #2a1a1d; padding: 12px 14px; }
+.critical-alert p { margin: 8px 0; }
+.critical-alert blockquote { margin: 8px 0; border-left: 2px solid var(--danger); padding-left: 12px; }

@@ -1,6 +1,10 @@
 import type { Incident } from "../types";
 
 const STEPS = ["Assigned", "Nudge", "Default owner", "Callback", "Supervisor"];
+const HAZARD_ICONS: Record<string, string> = {
+  flood: "🌊", blocked_drain: "🚧", water_on_road: "🌊", stalled_vehicle: "🚗",
+  pothole: "🚧", debris: "🚧", downed_tree: "🌳", downed_line: "⚡", outage: "⚡",
+};
 
 interface Props {
   incident: Incident;
@@ -10,7 +14,7 @@ interface Props {
   onAccept?: (incident: Incident) => void;
 }
 
-/** TODO(C3/C5): hazard icon, big-screen sizing, red pulse when a card enters the supervisor queue (C8). */
+/** Phase 1 ownership and hazard summary; rank-change animation belongs to C8. */
 export default function IncidentCard({ incident, now, rank, onOpen, onAccept }: Props) {
   const tone = incident.accepted ? "accepted" : incident.ladder_step >= 5 ? "danger" : incident.ladder_step >= 3 ? "warn" : "open";
   const secondsLeft = incident.next_step_at
@@ -21,12 +25,13 @@ export default function IncidentCard({ incident, now, rank, onOpen, onAccept }: 
     <article className={`card ${tone}`} onClick={() => onOpen(incident.id)}>
       <div className="card-head">
         {rank !== undefined && <span className="rank">{rank}</span>}
-        <h3>{incident.title}</h3>
+        <h3><span aria-hidden="true">{HAZARD_ICONS[incident.hazard_type] ?? "⚠"} </span>{incident.title}</h3>
         <span className="risk" title="Risk score">{incident.risk_score}</span>
       </div>
 
       <div className="meta">
         <span>{incident.report_count} {incident.report_count === 1 ? "witness" : "witnesses"}</span>
+        <span>{incident.accepted ? "Accepted" : incident.acknowledged ? "Acknowledged · awaiting acceptance" : "Assigned · awaiting acknowledgment"}</span>
         <span>{incident.owner ?? incident.department ?? "Unassigned"}</span>
         {secondsLeft !== null && <span>next step in {secondsLeft}s</span>}
       </div>

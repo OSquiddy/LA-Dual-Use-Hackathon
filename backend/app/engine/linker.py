@@ -55,7 +55,7 @@ def find_incident(s: Session, report: Report) -> Link | None:
         minutes = round(abs(report.created_at - latest).total_seconds() / 60)
         group = hazard_group(report.hazard_type) or report.hazard_type
 
-        if report.lat is not None and incident.lat is not None:
+        if all(value is not None for value in (report.lat, report.lng, incident.lat, incident.lng)):
             d = distance_m(report.lat, report.lng, incident.lat, incident.lng)
             if d > LINK_RADIUS_M:
                 continue

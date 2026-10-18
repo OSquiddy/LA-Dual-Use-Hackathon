@@ -1,0 +1,17 @@
+{
+  "event": "call_analyzed",
+  "call": {
+    "call_id": "synthetic-phase1-intake",
+    "from_number": "+13235550144",
+    "transcript": "SYNTHETIC TEST: There is water across Figueroa at Avenue fifty two. Nobody is trapped. Yes, you may call me back.",
+    "call_analysis": {
+      "custom_analysis_data": {
+        "location_text": "Figueroa and Avenue fifty two",
+        "hazard_type": "water_on_road",
+        "danger_words": [],
+        "anyone_in_danger": false,
+        "callback_ok": true
+      }
+    }
+  }
+}

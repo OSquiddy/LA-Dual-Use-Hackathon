@@ -17,7 +17,7 @@ def schedule(incident_id: int, call_id: str, attempt_no: int) -> None:
     outcome, danger, summary = SCRIPTED_ANSWER
     timer = threading.Timer(
         SIMULATED_DELAY_S,
-        _deliver,
+        _deliver_scheduled,
         args=(CallbackOutcome(incident_id=incident_id, call_id=call_id, attempt_no=attempt_no,
                               outcome=outcome, danger=danger, summary=summary),),
     )
@@ -37,3 +37,9 @@ def _deliver(outcome: CallbackOutcome) -> None:
     from app.engine.ladder import record_callback_outcome
 
     record_callback_outcome(outcome)
+
+
+def _deliver_scheduled(outcome: CallbackOutcome) -> None:
+    from app.engine.ladder import record_scheduled_callback_outcome
+
+    record_scheduled_callback_outcome(outcome)

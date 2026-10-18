@@ -5,11 +5,13 @@ Payload field names below are our best reading of Retell's docs; check them agai
 payload (save it as tests/fixtures/retell_call_analyzed.json) and fix the mapping here.
 """
 import logging
+import json
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.config import HAZARD_TYPES
+from app.config import HAZARD_TYPES, RETELL_API_KEY
+from app.voice.security import verify_signature
 from app.contracts import CallbackOutcome, ReportIn
 from app.engine.ingest import ingest_report
 from app.engine.ladder import record_callback_outcome
@@ -22,17 +24,42 @@ NO_ANSWER_REASONS = {"dial_no_answer", "voicemail_reached", "dial_busy", "dial_f
 
 @router.post("/retell/webhook")
 async def retell_webhook(request: Request) -> Response:
-    # TODO(A3): verify the x-retell-signature header with RETELL_API_KEY before trusting the body.
-    body = await request.json()
-    event, call = body.get("event"), body.get("call", {})
-    log.info("retell %s %s", event, call.get("call_id"))
-
-    if event == "call_analyzed":
-        metadata = call.get("metadata") or {}
+    raw = await request.body()
+    if not verify_signature(raw, request.headers.get("x-retell-signature", ""), RETELL_API_KEY):
+        raise HTTPException(401, "Invalid webhook signature")
+    try:
+        body = json.loads(raw)
+        if not isinstance(body, dict) or not isinstance(body.get("event"), str):
+            raise ValueError("Expected event object")
+        if body["event"] != "call_analyzed":
+            return Response(status_code=204)
+        call = body.get("call")
+        if not isinstance(call, dict) or not isinstance(call.get("call_id"), str) or not call["call_id"].strip():
+            raise ValueError("Missing call ID")
+        metadata = call.get("metadata")
+        metadata = {} if metadata is None else metadata
+        if not isinstance(metadata, dict):
+            raise ValueError("Invalid metadata")
+        analysis = call.get("call_analysis")
+        if analysis is not None:
+            if not isinstance(analysis, dict):
+                raise ValueError("Invalid analysis")
+            fields = analysis.get("custom_analysis_data")
+            if fields is not None and not isinstance(fields, dict):
+                raise ValueError("Invalid analysis fields")
         if "incident_id" in metadata:
-            record_callback_outcome(callback_from_call(call))
+            result = callback_from_call(call)
+            if result.incident_id <= 0 or result.attempt_no <= 0:
+                raise ValueError("Invalid callback identifiers")
         else:
-            ingest_report(intake_from_call(call))
+            result = intake_from_call(call)
+    except (ValueError, TypeError, KeyError, AttributeError, OverflowError, OSError):
+        # Do not expose transcripts, phone numbers, or provider payloads in errors.
+        raise HTTPException(422, "Invalid webhook payload") from None
+    if "incident_id" in metadata:
+        record_callback_outcome(result)
+    else:
+        ingest_report(result)
     return Response(status_code=204)
 
 

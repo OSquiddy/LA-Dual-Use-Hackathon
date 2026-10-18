@@ -13,10 +13,18 @@ const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-di
 /** TODO(C4/C10): live "calling resident…" indicator, nicer timeline. */
 export default function IncidentDetail({ id, onClose }: Props) {
   const [detail, setDetail] = useState<Detail | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    const load = () => fetchIncident(id).then((d) => alive && setDetail(d)).catch(() => {});
+    setDetail(null);
+    setError(false);
+    const load = () => fetchIncident(id).then((d) => {
+      if (alive) {
+        setDetail(d);
+        setError(false);
+      }
+    }).catch(() => { if (alive) setError(true); });
     load();
     const timer = setInterval(load, 2000);
     return () => {
@@ -28,8 +36,9 @@ export default function IncidentDetail({ id, onClose }: Props) {
   return (
     <aside className="drawer">
       <button className="close" onClick={onClose} aria-label="Close">×</button>
+      {error && <p role="alert">Could not load this incident. Retrying…</p>}
       {!detail ? (
-        <p className="muted">Loading…</p>
+        !error && <p className="muted">Loading…</p>
       ) : (
         <>
           <h2>{detail.title}</h2>
@@ -49,6 +58,9 @@ export default function IncidentDetail({ id, onClose }: Props) {
             {detail.events.map((e, i) => (
               <li key={i}>
                 <time>{time(e.at)}</time> {e.reason}
+                <div className="muted">
+                  {e.actor}{e.evidence.length > 0 && ` · Evidence: ${e.evidence.join(", ")}`}
+                </div>
               </li>
             ))}
           </ol>
@@ -76,6 +88,10 @@ export default function IncidentDetail({ id, onClose }: Props) {
           {detail.reports.map((r) => (
             <div key={r.id} className="report">
               <div className="muted">{time(r.created_at)} · {r.location_text ?? "location unknown"} · {r.hazard_type}</div>
+              <div className="muted">
+                Report #{r.id} · Callback permission: {r.callback_ok ? "given" : "not given"}
+                {r.danger_words.length > 0 && ` · Extracted danger phrases: ${r.danger_words.join(", ")}`}
+              </div>
               <p>“{r.transcript}”</p>
             </div>
           ))}

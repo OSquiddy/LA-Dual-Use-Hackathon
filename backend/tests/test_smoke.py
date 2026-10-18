@@ -45,7 +45,7 @@ def test_unknown_twist_is_404(client):
     assert client.post("/api/twists/dept_silent", json={"on": True}).json()["twists"]["dept_silent"] is True
 
 
-def test_intake_webhook_creates_report(client):
+def test_intake_webhook_creates_report(client, signed_webhook):
     payload = {
         "event": "call_analyzed",
         "call": {
@@ -62,6 +62,6 @@ def test_intake_webhook_creates_report(client):
             },
         },
     }
-    assert client.post("/retell/webhook", json=payload).status_code == 204
+    assert signed_webhook(payload).status_code == 204
     state = client.get("/api/state").json()
     assert sum(i["report_count"] for i in state["incidents"]) == 4
