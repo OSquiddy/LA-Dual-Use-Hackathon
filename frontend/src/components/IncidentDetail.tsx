@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { fetchIncident, simulateCallback } from "../api";
 import type { IncidentDetail as Detail, Outcome } from "../types";
+import EvidenceReview from "./EvidenceReview";
+import AssignmentSummary from "./AssignmentSummary";
+import AssignmentActions from "./AssignmentActions";
+import AssignmentHistory from "./AssignmentHistory";
 
 interface Props {
   id: number;
@@ -43,8 +47,13 @@ export default function IncidentDetail({ id, onClose }: Props) {
         <>
           <h2>{detail.title}</h2>
           <p className="muted">
-            {detail.assignment?.department} · {detail.owner ?? "no owner yet"} · risk {detail.risk_score} · step {detail.ladder_step}/5
+            Risk {detail.risk_score}/100 · step {detail.ladder_step}/5
           </p>
+          <AssignmentSummary incident={detail} />
+          <AssignmentActions key={detail.id} incident={detail} onChanged={() => {
+            fetchIncident(id).then(setDetail).catch(() => setError(true));
+          }} />
+          <AssignmentHistory incident={detail} />
 
           <h3>Still missing</h3>
           {detail.debts.length ? (
@@ -70,7 +79,7 @@ export default function IncidentDetail({ id, onClose }: Props) {
             <ul>
               {detail.callbacks.map((c) => (
                 <li key={c.attempt_no}>
-                  #{c.attempt_no} · {c.outcome ?? "ringing…"} {c.summary && `— ${c.summary}`}
+                  #{c.attempt_no} · {c.outcome ?? "ringing…"} {c.danger && "· Possible danger reported"}
                 </li>
               ))}
             </ul>
@@ -92,9 +101,9 @@ export default function IncidentDetail({ id, onClose }: Props) {
                 Report #{r.id} · Callback permission: {r.callback_ok ? "given" : "not given"}
                 {r.danger_words.length > 0 && ` · Extracted danger phrases: ${r.danger_words.join(", ")}`}
               </div>
-              <p>“{r.transcript}”</p>
             </div>
           ))}
+          <EvidenceReview key={detail.id} id={detail.id} />
         </>
       )}
     </aside>

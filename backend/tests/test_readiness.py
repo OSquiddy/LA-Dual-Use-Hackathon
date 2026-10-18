@@ -168,7 +168,9 @@ def test_real_simulator_delivers_outcome_without_network(client, monkeypatch, cl
     deadline = time.monotonic() + 3
     while time.monotonic() < deadline:
         detail = client.get(f'/api/incidents/{i}').json()
-        if detail['callbacks'] and detail['callbacks'][0]['outcome'] is not None:
+        # A polling response can straddle the background callback commit. Wait
+        # for the complete expected projection, not just its callback row.
+        if detail['callbacks'] and detail['callbacks'][0]['outcome'] is not None and detail['critical']:
             break
         time.sleep(0.02)
     assert detail['callbacks'][0]['outcome'] == 'worse'

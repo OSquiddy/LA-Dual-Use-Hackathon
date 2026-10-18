@@ -22,7 +22,22 @@
       "lat": 34.106094,
       "lng": -118.199577,
       "acknowledged": false,
-      "critical": true
+      "critical": true,
+      "assignment": {
+        "department": "Street Services",
+        "owner": "J. Ramirez (on-call)",
+        "assigned_at": "2026-10-18T02:11:35Z",
+        "accepted_at": null,
+        "default_owner_at": "2026-10-18T02:11:35Z",
+        "acknowledged_at": null,
+        "acknowledged_by": null,
+        "accepted_by": null,
+        "id": 2,
+        "assigned_by": "engine",
+        "change_reason": "Assigned from the configured fictional on-call roster; acknowledgment and acceptance pending."
+      },
+      "closed_at": null,
+      "closed_by": null
     },
     {
       "id": 2,
@@ -44,7 +59,22 @@
       "lat": 34.109459,
       "lng": -118.192749,
       "acknowledged": true,
-      "critical": false
+      "critical": false,
+      "assignment": {
+        "id": 3,
+        "department": "Urban Forestry",
+        "owner": null,
+        "assigned_at": "2026-10-18T02:13:00Z",
+        "default_owner_at": null,
+        "acknowledged_at": "2026-10-18T02:13:30Z",
+        "acknowledged_by": "T. Nguyen (on-call)",
+        "accepted_at": null,
+        "accepted_by": null,
+        "assigned_by": "engine",
+        "change_reason": "Fictional demonstration assignment."
+      },
+      "closed_at": null,
+      "closed_by": null
     },
     {
       "id": 3,
@@ -63,7 +93,22 @@
       "lat": 34.104961,
       "lng": -118.201866,
       "acknowledged": false,
-      "critical": false
+      "critical": false,
+      "assignment": {
+        "id": 4,
+        "department": "Street Services",
+        "owner": "M. Lee",
+        "assigned_at": "2026-10-18T02:13:00Z",
+        "default_owner_at": null,
+        "acknowledged_at": null,
+        "acknowledged_by": null,
+        "accepted_at": "2026-10-18T02:14:00Z",
+        "accepted_by": "M. Lee",
+        "assigned_by": "engine",
+        "change_reason": "Fictional demonstration assignment."
+      },
+      "closed_at": null,
+      "closed_by": null
     }
   ],
   "supervisor_queue": [1],

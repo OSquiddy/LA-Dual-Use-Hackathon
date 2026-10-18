@@ -73,11 +73,44 @@
   "assignment": {
     "department": "Street Services",
     "owner": "J. Ramirez (on-call)",
-    "assigned_at": "2026-10-18T02:05:05Z",
+    "assigned_at": "2026-10-18T02:11:35Z",
     "accepted_at": null,
     "default_owner_at": "2026-10-18T02:11:35Z",
     "acknowledged_at": null,
     "acknowledged_by": null,
-    "accepted_by": null
-  }
+    "accepted_by": null,
+    "id": 2,
+    "assigned_by": "engine",
+    "change_reason": "Assigned from the configured fictional on-call roster; acknowledgment and acceptance pending."
+  },
+  "assignment_history": [
+    {
+      "department": "Street Services",
+      "owner": null,
+      "assigned_at": "2026-10-18T02:05:05Z",
+      "accepted_at": null,
+      "default_owner_at": null,
+      "acknowledged_at": null,
+      "acknowledged_by": null,
+      "accepted_by": null,
+      "id": 1,
+      "assigned_by": "engine",
+      "change_reason": "Routed by incident hazard; individual not assigned."
+    },
+    {
+      "department": "Street Services",
+      "owner": "J. Ramirez (on-call)",
+      "assigned_at": "2026-10-18T02:11:35Z",
+      "accepted_at": null,
+      "default_owner_at": "2026-10-18T02:11:35Z",
+      "acknowledged_at": null,
+      "acknowledged_by": null,
+      "accepted_by": null,
+      "id": 2,
+      "assigned_by": "engine",
+      "change_reason": "Assigned from the configured fictional on-call roster; acknowledgment and acceptance pending."
+    }
+  ],
+  "closed_at": null,
+  "closed_by": null
 }

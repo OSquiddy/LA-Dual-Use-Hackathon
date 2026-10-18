@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from sqlmodel import Session, col, select
 
 from app.config import HAZARD_BASE_RISK, HAZARD_LABELS
+from app.engine.source_text import caller_text
 from app.models import Callback, Incident, Report
 
 
@@ -66,7 +67,7 @@ def supported_danger(report: Report) -> list[str]:
     Guards against an extracted "trapped" when the caller never said it. Retell's anyone_in_danger
     flag counts on its own: we over-flag a person at risk on purpose.
     """
-    clauses = re.split(r"[.!?;,\n]|\b(?:but|however|yet)\b", report.transcript.lower().replace("’", "'"))
+    clauses = re.split(r"[.!?;,\n]|\b(?:but|however|yet)\b", caller_text(report.transcript).lower().replace("’", "'"))
     phrases = [p for p in report.danger_words if _affirmed(p, clauses)]
     if report.anyone_in_danger:
         phrases.append("someone in danger")

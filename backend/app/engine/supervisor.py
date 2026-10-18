@@ -1,12 +1,13 @@
 """B10: the supervisor's ranked, capped queue, plus the uncapped critical-alert lane."""
 from sqlmodel import Session, col, func, select
 
-from app.config import SUPERVISOR_MIN_RISK, SUPERVISOR_QUEUE_SIZE
+from app.config import HAZARD_LABELS, SUPERVISOR_MIN_RISK, SUPERVISOR_QUEUE_SIZE
 from app.contracts import CriticalAlertView
+from app.engine.evidence import alert_reason, display_location
 from app.models import Debt, Incident
 from app.timeutil import from_db
 
-UNCERTAINTY_DEBTS = ("caller_unreachable", "consent_unknown", "location", "no_owner")
+UNCERTAINTY_DEBTS = ("caller_unreachable", "consent_unknown", "callback_number_missing", "location", "no_owner")
 
 
 def queue(s: Session) -> list[int]:
@@ -34,9 +35,9 @@ def critical_alerts(s: Session) -> list[CriticalAlertView]:
         assignment = latest_assignment(s, incident.id)
         alerts.append(CriticalAlertView(
             incident_id=incident.id,
-            title=incident.title,
-            reason=incident.critical_reason or "",
-            quote=incident.critical_quote,
+            title=f"{HAZARD_LABELS.get(incident.hazard_type, 'Report')} — {display_location(incident.place or incident.title.split(' — ', 1)[-1])}",
+            reason=alert_reason(s, incident),
+            quote="",
             evidence=incident.critical_evidence,
             since=from_db(incident.critical_since),
             accepted=bool(assignment and assignment.accepted_at),

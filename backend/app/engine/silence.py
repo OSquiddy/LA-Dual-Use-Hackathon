@@ -14,8 +14,9 @@ from app.timeutil import utcnow
 def department_stats(s: Session) -> list[DepartmentView]:
     since = utcnow() - timedelta(hours=1)
     rows = s.exec(select(Assignment).where(Assignment.assigned_at >= since)).all()
-    assigned = Counter(a.department for a in rows)
-    accepted = Counter(a.department for a in rows if a.accepted_at)
+    # Reassignments retain history rows. Count incidents per department, not snapshots.
+    assigned = Counter(department for _, department in {(a.incident_id, a.department) for a in rows})
+    accepted = Counter(department for _, department in {(a.incident_id, a.department) for a in rows if a.accepted_at})
     return [
         DepartmentView(
             name=name, assigned_1h=assigned[name], accepted_1h=accepted[name],

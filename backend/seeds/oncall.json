@@ -1,5 +1,5 @@
 {
-  "_note": "Default owner per department and area (ladder step 3). Fictional names; the city configures these, we never invent owners.",
+  "_note": "Fictional demonstration personnel, configured by department and area for ladder step 3. No city affiliation or actual employee identity is implied. Missing entries never produce invented owners.",
   "Street Services": { "Highland Park": "J. Ramirez (on-call)" },
   "Urban Forestry": { "Highland Park": "T. Nguyen (on-call)" },
   "Power & Water": { "Highland Park": "K. Okafor (on-call)" }

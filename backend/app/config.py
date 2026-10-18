@@ -32,6 +32,7 @@ RETELL_API_KEY = os.getenv("RETELL_API_KEY", "")
 RETELL_FROM_NUMBER = os.getenv("RETELL_FROM_NUMBER", "")
 RETELL_INTAKE_AGENT_ID = os.getenv("RETELL_INTAKE_AGENT_ID", "")
 RETELL_CALLBACK_AGENT_ID = os.getenv("RETELL_CALLBACK_AGENT_ID", "")
+REVIEWER_API_KEY = os.getenv("REVIEWER_API_KEY", "")  # local reviewer evidence access; never a VITE_* setting
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")
 CALL_MODE = os.getenv("CALL_MODE", "simulate")  # simulate | live
 TIMING_PROFILE = os.getenv("TIMING_PROFILE", "demo")  # demo | real
@@ -48,7 +49,9 @@ LINK_WINDOW_MIN = 60
 SUPERVISOR_QUEUE_SIZE = 10
 SUPERVISOR_MIN_RISK = 40  # unaccepted cases below this stay with their department
 HIGH_RISK_THRESHOLD = 60  # high risk + no way to reach the caller -> supervisor review
-MAX_CALLBACK_ATTEMPTS = 2
+MAX_CALLBACK_ATTEMPTS = max(1, int(os.getenv("MAX_CALLBACK_ATTEMPTS", "2")))
+CALLBACK_RESULT_TIMEOUT_S = max(30, int(os.getenv("CALLBACK_RESULT_TIMEOUT_S", "180")))
+LIVE_CALLBACKS_ENABLED = os.getenv("LIVE_CALLBACKS_ENABLED", "0") == "1"
 DEPT_SILENCE_MIN_ASSIGNED = 5
 
 HAZARD_GROUPS = {

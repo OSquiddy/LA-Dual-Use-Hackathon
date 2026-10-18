@@ -1,21 +1,25 @@
-"""Retell raw-body HMAC verification, including the provider's five-minute freshness window.
+"""Raw-body verification using the official Retell Python SDK.
 
-Reference: https://github.com/RetellAI/retell-python-sdk/blob/main/src/retell/lib/webhook_auth.py
+Only the Retell API key marked for webhooks can authenticate provider deliveries.
 """
-import hashlib
-import hmac
+from functools import lru_cache
 import re
-import time
+
+from retell import Retell
+
+
+@lru_cache(maxsize=1)
+def _retell_client(key: str) -> Retell:
+    # Constructing a client makes no API request. Verification is entirely local.
+    return Retell(api_key=key)
 
 
 def verify_signature(body: bytes, signature: str, key: str) -> bool:
-    if not key:
+    if not key or not re.fullmatch(r"v=\d{1,16},d=[0-9a-f]{64}", signature):
         return False
-    match = re.fullmatch(r"v=(\d{1,16}),d=([0-9a-f]{64})", signature)
-    if match is None:
+    try:
+        return bool(_retell_client(key).verify(
+            body.decode("utf-8"), api_key=key, signature=signature,
+        ))
+    except (UnicodeError, ValueError, TypeError):
         return False
-    timestamp, digest = match.groups()
-    if abs(int(time.time() * 1000) - int(timestamp)) > 300_000:
-        return False
-    expected = hmac.new(key.encode(), body + timestamp.encode(), hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, digest)

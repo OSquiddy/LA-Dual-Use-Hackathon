@@ -53,12 +53,13 @@ for (const file of files) {
       assert(html.includes('Prototype demo'), 'Prototype identity absent');
       assert(html.includes(escapeHtml(snapshot.detail.title)), 'Incident title absent');
       for (const report of snapshot.detail.reports) {
-        assert(html.includes(escapeHtml(report.transcript)), 'A retained report transcript is absent');
+        assert(!report.transcript, 'Ordinary API response exposed a transcript');
       }
+      assert(html.includes('Unlock incident evidence'), 'Restricted evidence control absent');
       assert(html.includes('Callback permission:'), 'Consent display absent');
       for (const alert of snapshot.state.critical_alerts) {
         assert(html.includes(escapeHtml(alert.reason)), 'Critical reason absent');
-        if (alert.quote) assert(html.includes(escapeHtml(alert.quote)), 'Critical evidence absent');
+        assert(!alert.quote, 'Critical response exposed raw evidence');
       }
       if (snapshot.stage === 'acknowledged') assert(html.includes('Acknowledged · awaiting acceptance'), 'Receipt confused with acceptance');
       if (snapshot.stage === 'accepted') assert(html.includes('Accepted'), 'Acceptance label absent');

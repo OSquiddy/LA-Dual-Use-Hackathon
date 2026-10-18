@@ -1,4 +1,3 @@
-import { acceptIncident } from "../api";
 import type { AppState, Incident } from "../types";
 import IncidentCard from "./IncidentCard";
 
@@ -14,8 +13,8 @@ export default function DepartmentQueue({ state, onOpen }: Props) {
     byDepartment.set(name, [...(byDepartment.get(name) ?? []), incident]);
   }
 
-  // TODO(C7): pick the accepting person instead of a generic desk name; optimistic grey-out.
-  const accept = (incident: Incident) => acceptIncident(incident.id, `${incident.department ?? "Department"} desk`);
+  // Open the named human action form. Opening a drawer never accepts responsibility.
+  const accept = (incident: Incident) => onOpen(incident.id);
 
   return (
     <section className="pane">

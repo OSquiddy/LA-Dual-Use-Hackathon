@@ -70,6 +70,28 @@ button:hover { border-color: var(--accent); }
 .sim { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .report { border-top: 1px solid var(--line); padding-top: 8px; }
 .report p { margin: 4px 0 0; }
+.transcript { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+
+.responsibility { background: rgb(0 0 0 / 0.13); border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+.responsibility-heading { display: grid; gap: 6px; margin-bottom: 10px; }
+.responsibility-heading > strong { font-size: 16px; color: var(--text); }
+.responsibility-status { font-size: 13px; font-weight: 600; color: var(--warn); }
+.responsibility-status.accepted { color: var(--ok); }
+.responsibility-status.closed { color: var(--muted); }
+.responsibility-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; margin: 0; }
+.responsibility-fields div { min-width: 0; }
+.responsibility-fields dt { color: var(--muted); font-size: 12px; margin-bottom: 3px; }
+.responsibility-fields dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.roster-note { font-size: 11px; color: var(--muted); margin: 10px 0 0; }
+@media (max-width: 440px) { .responsibility-fields { grid-template-columns: 1fr; } }
+.assignment-actions { border: 1px solid var(--line); border-radius: 6px; padding: 12px; display: grid; gap: 10px; }
+.assignment-actions label { display: grid; gap: 5px; font-size: 13px; margin: 8px 0; }
+.assignment-actions input, .assignment-actions select { width: 100%; min-width: 0; padding: 8px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; font: inherit; }
+.action-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+.assignment-actions summary { cursor: pointer; padding: 6px 0; }
+.assignment-records { padding-left: 20px; display: grid; gap: 14px; }
+.assignment-records .responsibility-fields { margin-top: 8px; }
 
 .twists { position: fixed; left: 20px; bottom: 20px; background: var(--panel); border: 1px solid var(--accent); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; }
 .twists label { display: flex; gap: 8px; align-items: center; }

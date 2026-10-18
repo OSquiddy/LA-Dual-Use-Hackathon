@@ -27,7 +27,7 @@ export default function App() {
 
       {error && <div className="error">Backend unreachable: {error}</div>}
       {state && <AlertBanner alerts={state.alerts} />}
-      {state && <CriticalAlerts alerts={state.critical_alerts} onOpen={setOpenId} />}
+      {state && <CriticalAlerts alerts={state.critical_alerts} incidents={state.incidents} onOpen={setOpenId} />}
 
       {state ? (
         <main className="panes">

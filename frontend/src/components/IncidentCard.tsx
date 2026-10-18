@@ -1,4 +1,5 @@
 import type { Incident } from "../types";
+import AssignmentSummary from "./AssignmentSummary";
 
 const STEPS = ["Assigned", "Nudge", "Default owner", "Callback", "Supervisor"];
 const HAZARD_ICONS: Record<string, string> = {
@@ -31,10 +32,10 @@ export default function IncidentCard({ incident, now, rank, onOpen, onAccept }: 
 
       <div className="meta">
         <span>{incident.report_count} {incident.report_count === 1 ? "witness" : "witnesses"}</span>
-        <span>{incident.accepted ? "Accepted" : incident.acknowledged ? "Acknowledged · awaiting acceptance" : "Assigned · awaiting acknowledgment"}</span>
-        <span>{incident.owner ?? incident.department ?? "Unassigned"}</span>
         {secondsLeft !== null && <span>next step in {secondsLeft}s</span>}
       </div>
+
+      <AssignmentSummary incident={incident} />
 
       <ol className="ladder" aria-label={`Ladder step ${incident.ladder_step} of 5`}>
         {STEPS.map((label, i) => (
@@ -52,17 +53,14 @@ export default function IncidentCard({ incident, now, rank, onOpen, onAccept }: 
 
       {incident.why && <p className="why">{incident.why}</p>}
 
-      {onAccept && !incident.accepted && (
-        <button
-          className="accept"
-          onClick={(e) => {
-            e.stopPropagation();
-            onAccept(incident);
-          }}
-        >
-          Accept
-        </button>
-      )}
+      <div className="action-buttons">
+        <button onClick={(e) => { e.stopPropagation(); onOpen(incident.id); }}>Review incident</button>
+        {onAccept && !incident.accepted && incident.status !== "closed" && (
+          <button className="accept" onClick={(e) => { e.stopPropagation(); onAccept(incident); }}>
+            Accept
+          </button>
+        )}
+      </div>
     </article>
   );
 }

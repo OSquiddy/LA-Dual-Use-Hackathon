@@ -32,11 +32,11 @@ python -m venv .venv
 # Windows: .venv\Scripts\activate    macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 test -f ../.env || cp ../.env.example ../.env  # local only; never overwrite configured secrets
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+CALL_MODE=simulate uvicorn app.main:app --reload --host 127.0.0.1 --port 8001 --no-access-log
 pytest                               # contract + smoke tests
 ```
 
-Load the storm-night scenario: `curl -X POST localhost:8000/api/demo/reset -H "content-type: application/json" -d '{"seed":"storm_night"}'`. API docs are at http://localhost:8000/docs.
+Load the storm-night scenario: `curl -X POST localhost:8001/api/demo/reset -H "content-type: application/json" -d '{"seed":"storm_night"}'`. API docs are at http://localhost:8001/docs.
 
 **Dashboard** (Node 18+), from `frontend/`:
 
@@ -46,9 +46,21 @@ test -f .env.local || cp .env.example .env.local    # set VITE_API=live for loca
 npm run dev                          # http://localhost:5173 · press T for the twist panel
 ```
 
-Set `VITE_API=live` to poll the backend. `VITE_BACKEND_URL` can point at PC-B's machine on the same Wi-Fi (e.g. `http://192.168.1.20:8000`).
+Set `VITE_API=live` and `VITE_BACKEND_URL=http://127.0.0.1:8001` for local integration. The public webhook gateway does not expose dashboard APIs; cross-machine dashboard sharing needs a separate agreed setup.
 
-**Retell Phase 0:** Intake and Callback agent prompts/extraction fields have been browser-tested. **Do not expose the public webhook yet**: `backend/app/voice/webhooks.py` still needs signature verification, and `callback_ok` is not yet persisted or enforced in the outbound flow. Keep `CALL_MODE=simulate`. After the safety gates pass, PC-A can use `cloudflared tunnel --url http://localhost:8000` (or `ngrok http 8000`) and configure `<url>/retell/webhook`. Only call explicitly consenting test participants.
+**Retell public ingress:** Keep the main backend private on `127.0.0.1:8001`. Run the separate webhook-only gateway from `backend/`:
+
+```bash
+CALL_MODE=simulate .venv/bin/python -m uvicorn webhook_gateway:app --host 127.0.0.1 --port 8002 --no-access-log
+```
+
+Tunnel **only port 8002**, using `cloudflared tunnel --url http://127.0.0.1:8002` or `ngrok http 8002`. Set the Retell agent's webhook URL to `<public-gateway-url>/retell/webhook`; set `PUBLIC_BASE_URL` locally to that public base URL. Never point the public tunnel at port 8001. The gateway exposes no dashboard APIs, reset endpoint, docs or OpenAPI route. Both gateway and backend verify signatures using the official pinned `retell-sdk` and the `RETELL_API_KEY` marked for webhooks. The backend authorizes the configured Intake/Callback agent identities and persists call-ID uniqueness.
+
+See [backend/WEBHOOK_SETUP.md](backend/WEBHOOK_SETUP.md) for the exact two-terminal startup, migration behavior, tests and remaining real-provider verification. Keep `CALL_MODE=simulate`; a successful local synthetic check does not certify a genuine Retell delivery.
+
+**Incident evidence:** Critical Review shows concise, source-grounded assessments. Full intake transcripts require reviewer authorization in the incident drawer; configure the separate `REVIEWER_API_KEY` privately in the root `.env`. Ordinary dashboard responses omit transcripts. See [backend/EVIDENCE_REVIEW.md](backend/EVIDENCE_REVIEW.md) for access setup, consent semantics and test commands.
+
+**Responsibility:** Every queue and Critical Review shows the responsible department, assigned individual, recorded acknowledgment/acceptance, and timestamps. Open incident detail to record a named human action, review assignment history, or reassign using the configured fictional roster. Reassignment requires the existing reviewer key in its password field; unauthorized requests are rejected. See [backend/ASSIGNMENT_ACCOUNTABILITY.md](backend/ASSIGNMENT_ACCOUNTABILITY.md) for lifecycle semantics, approved API changes and verification results.
 
 ## How the pieces join
 

@@ -26,6 +26,9 @@ export interface Incident {
   lng: number | null;
   acknowledged: boolean; // receipt only; never implies accepted
   critical: boolean; // also listed in AppState.critical_alerts
+  assignment: Assignment | null;
+  closed_at: string | null;
+  closed_by: string | null;
 }
 
 export interface Department {
@@ -81,6 +84,8 @@ export interface Report {
   transcript: string;
   created_at: string;
   callback_ok: boolean;
+  callback_opt_out?: boolean;
+  callback_eligible?: boolean;
 }
 
 export interface IncidentEvent {
@@ -97,6 +102,23 @@ export interface Callback {
   danger: boolean;
   summary: string;
   called_at: string;
+  id?: number | null;
+  state?: string;
+  scheduled_at?: string | null;
+  completed_at?: string | null;
+  error_code?: string | null;
+  mode?: string;
+  transcript?: string; // restricted evidence only
+}
+
+export interface CallbackStatus {
+  eligible: boolean;
+  reason: string;
+  scheduled_at: string | null;
+  call_mode: string;
+  attempts_used: number;
+  max_attempts: number;
+  automatic_live_enabled: boolean;
 }
 
 export interface Assignment {
@@ -108,11 +130,22 @@ export interface Assignment {
   acknowledged_at: string | null;
   acknowledged_by: string | null;
   accepted_by: string | null;
+  id: number | null;
+  assigned_by: string | null;
+  change_reason: string | null;
+}
+
+export interface AssignmentOptions {
+  recommended_department: string;
+  area: string | null;
+  departments: { department: string; owners: string[] }[];
+  fictional_roster: boolean;
 }
 
 export interface IncidentDetail extends Incident {
   reports: Report[];
   events: IncidentEvent[];
   callbacks: Callback[];
-  assignment: Assignment | null;
+  assignment_history: Assignment[];
+  callback_status?: CallbackStatus;
 }
