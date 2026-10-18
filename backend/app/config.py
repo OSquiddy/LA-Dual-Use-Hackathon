@@ -39,20 +39,46 @@ TIMING_PROFILE = os.getenv("TIMING_PROFILE", "demo")  # demo | real
 TIMING = TIMING_PROFILES[TIMING_PROFILE]
 
 
-def _resolve_db_path() -> str:
-    """SQLite path. On Render, put a paid Disk at /var/data and set DB_PATH=/var/data/handoffproof.db."""
-    raw = (os.getenv("DB_PATH") or "").strip() or str(BACKEND_DIR / "handoffproof.db")
-    path = Path(raw)
+def _sqlite_path_usable(path: Path) -> bool:
+    """True if we can create/open a SQLite file at path (directory must be writable)."""
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-    except OSError as exc:
-        raise RuntimeError(
-            f"Cannot create SQLite directory {path.parent} ({exc}). "
-            "On Render: upgrade off Free, add a Disk mounted at /var/data, "
-            "set DB_PATH=/var/data/handoffproof.db, then redeploy. "
-            "Or clear DB_PATH to use an ephemeral file under the app directory."
-        ) from exc
-    return str(path)
+        # Prove write access; SQLite needs this even when mkdir succeeds on a dead mount.
+        with path.open("a", encoding="utf-8"):
+            pass
+        return True
+    except OSError:
+        return False
+
+
+def _resolve_db_path() -> str:
+    """Prefer DB_PATH (Render Disk at /var/data). Fall back to a writable app/tmp path so deploys start."""
+    import logging
+
+    log = logging.getLogger("handoffproof")
+    preferred = (os.getenv("DB_PATH") or "").strip()
+    candidates: list[Path] = []
+    if preferred:
+        candidates.append(Path(preferred))
+    candidates.append(BACKEND_DIR / "handoffproof.db")
+    candidates.append(Path("/tmp/handoffproof.db"))
+
+    for path in candidates:
+        if _sqlite_path_usable(path):
+            if preferred and path != Path(preferred):
+                log.error(
+                    "DB_PATH=%s is not writable (no Render Disk at that mount?). "
+                    "Using ephemeral %s until you attach a Disk at /var/data and set "
+                    "DB_PATH=/var/data/handoffproof.db on a paid plan.",
+                    preferred,
+                    path,
+                )
+            return str(path)
+
+    raise RuntimeError(
+        "No writable SQLite location. Clear DB_PATH, or on Render attach a Disk at /var/data "
+        "and set DB_PATH=/var/data/handoffproof.db (requires a paid web service)."
+    )
 
 
 DB_PATH = _resolve_db_path()
