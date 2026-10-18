@@ -37,7 +37,21 @@ PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")
 CALL_MODE = os.getenv("CALL_MODE", "simulate")  # simulate | live
 TIMING_PROFILE = os.getenv("TIMING_PROFILE", "demo")  # demo | real
 TIMING = TIMING_PROFILES[TIMING_PROFILE]
-DB_PATH = os.getenv("DB_PATH") or str(BACKEND_DIR / "handoffproof.db")
+def _resolve_db_path() -> str:
+    """Ensure the SQLite file's parent directory exists (Render disks, /tmp, etc.)."""
+    raw = os.getenv("DB_PATH") or str(BACKEND_DIR / "handoffproof.db")
+    path = Path(raw)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        # Common on Render when DB_PATH=/var/data/... but no disk is mounted.
+        fallback = BACKEND_DIR / "handoffproof.db"
+        fallback.parent.mkdir(parents=True, exist_ok=True)
+        return str(fallback)
+    return str(path)
+
+
+DB_PATH = _resolve_db_path()
 DEMO_RESIDENT_PHONE = os.getenv("DEMO_RESIDENT_PHONE", "")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")  # optional; the engine must work without it
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
