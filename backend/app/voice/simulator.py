@@ -27,9 +27,12 @@ def schedule(incident_id: int, call_id: str, attempt_no: int) -> None:
 
 def simulate_now(incident_id: int, outcome: Outcome, danger: bool = False) -> None:
     with Session(engine) as s:
-        attempts = s.exec(select(func.count()).select_from(Callback).where(Callback.incident_id == incident_id)).one()
+        attempts = s.exec(select(func.max(Callback.attempt_no)).where(Callback.incident_id == incident_id)).one() or 0
+        call_id = f"sim-{uuid.uuid4().hex}"
+        s.add(Callback(incident_id=incident_id, call_id=call_id, attempt_no=attempts + 1, mode='simulate', state='calling'))
+        s.commit()
     summary = SCRIPTED_ANSWER[2] if outcome == "worse" else ""
-    _deliver(CallbackOutcome(incident_id=incident_id, call_id=f"sim-{uuid.uuid4().hex[:8]}",
+    _deliver(CallbackOutcome(incident_id=incident_id, call_id=call_id,
                              attempt_no=attempts + 1, outcome=outcome, danger=danger, summary=summary))
 
 

@@ -5,7 +5,7 @@ def test_health(client):
 def test_reset_loads_storm_night(client):
     state = client.get("/api/state").json()
     assert sum(i["report_count"] for i in state["incidents"]) == 3
-    assert all(i["department"] == "Street Services" for i in state["incidents"])
+    assert all(i["department"] == "Stormwater Operations" for i in state["incidents"])
 
 
 def test_gazetteer_geocodes_seed_locations(client):

@@ -1,9 +1,13 @@
 """B's engine rules: linking, evidence-only risk, consent-gated callbacks, ownership and critical alerts."""
 from datetime import datetime, timedelta, timezone
 
+from sqlmodel import Session, select
+
 from app.contracts import CallbackOutcome, ReportIn
-from app.engine import ladder
+from app.db import engine
+from app.engine import ladder, oncall
 from app.engine.ingest import ingest_report
+from app.models import Callback
 
 DEMO_RESIDENT = "+13235550103"
 
@@ -115,13 +119,17 @@ def test_nudge_then_default_owner_is_not_acceptance(client, calls, clock):
     assert storm(client)["ladder_step"] == 2
     clock.tick()
     flood = storm(client)
-    assert flood["ladder_step"] == 3 and flood["owner"] == "J. Ramirez (on-call)"
+    assert flood["ladder_step"] == 3 and flood["owner"] == oncall.default_owner(flood["department"], "Highland Park", flood_id)
     assert flood["accepted"] is False
     assert any(d["kind"] == "no_owner" and "not accepted yet" in d["label"] for d in flood["debts"])
     assert incident(client, flood_id)["assignment"]["default_owner_at"] is not None
 
 
-def test_missing_on_call_contact_is_flagged_not_invented(client, calls, clock):
+def test_missing_on_call_contact_is_flagged_not_invented(client, calls, clock, monkeypatch):
+    from copy import deepcopy
+    configuration = deepcopy(oncall._configuration())
+    configuration['Street Services'].pop('*', None)
+    monkeypatch.setattr(oncall, '_configuration', lambda: configuration)
     report("nowhere-1", location_text=None, hazard_type="pothole")
     clock.tick(2)
     pothole = next(i for i in state(client)["incidents"] if i["hazard_type"] == "pothole")
@@ -206,13 +214,15 @@ def test_duplicate_callback_webhook_is_ignored(client, calls, clock):
 
 # --- B10/B11 supervisor, critical lane, human-only actions -----------------------------------
 
-def test_resident_says_worse_pins_a_critical_alert_with_their_words(client, calls, clock):
+def test_resident_says_worse_pins_a_summary_with_an_evidence_reference(client, calls, clock):
     flood_id = storm(client)["id"]
     clock.tick(3)
     answer(flood_id, "test-call-1", 1, "worse", danger=True, summary="Water is at the curb and rising")
     s = state(client)
     (alert,) = s["critical_alerts"]
-    assert alert["incident_id"] == flood_id and alert["quote"] == "Water is at the curb and rising"
+    assert alert["incident_id"] == flood_id and alert["quote"] == ""
+    with Session(engine) as session:
+        assert session.exec(select(Callback).where(Callback.incident_id == flood_id)).one().summary == "Water is at the curb and rising"
     assert alert["reason"].startswith("Resident says it's worse") and alert["evidence"][0].startswith("callback:")
     flood = storm(client)
     assert flood["status"] == "escalated" and flood["ladder_step"] == 5 and flood["accepted"] is False
@@ -250,7 +260,7 @@ def test_person_in_danger_at_intake_is_critical_immediately(client):
     report("danger-1", location_text="Figueroa and Avenue 57", hazard_type="flood",
            anyone_in_danger=True, transcript="My neighbor is stuck in her car and the water is rising.")
     ave57 = next(i for i in state(client)["incidents"] if "Ave 57" in i["title"])
-    assert ave57["critical"] is True and ave57["why"] == "Caller reports someone in danger"
+    assert ave57["critical"] is True and "Caller reports possibly rising water" in ave57["why"]
 
 
 def test_critical_alerts_are_never_capped_by_the_top_10(client):

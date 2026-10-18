@@ -7,7 +7,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictBool, field_validator
 
 Outcome = Literal["worse", "same", "better", "no_answer"]
 Status = Literal["open", "accepted", "escalated", "closed"]
@@ -26,18 +26,28 @@ class ReportIn(BaseModel):
     danger_words: list[str] = []
     anyone_in_danger: bool = False
     callback_ok: bool = False  # True only for a clear yes; anything else means no outbound call
+    callback_opt_out: bool = False
     transcript: str = ""
     created_at: datetime
+
+    @field_validator('callback_ok', 'callback_opt_out', mode='before')
+    @classmethod
+    def explicit_boolean(cls, value):
+        return value is True
 
 
 class CallbackOutcome(BaseModel):
     incident_id: int
     call_id: str
     attempt_no: int
-    outcome: Outcome
+    outcome: Outcome | None = None
     danger: bool = False
     summary: str = ""  # e.g. "water at the curb and rising"
     transcript: str = ""
+    request_key: str | None = None
+    callback_opt_out: bool = False
+    wrong_number: bool = False
+    disconnection_reason: str | None = None
 
 
 # --- Engine -> dashboard ---------------------------------------------------------------------
@@ -45,6 +55,28 @@ class CallbackOutcome(BaseModel):
 class DebtView(BaseModel):
     kind: str  # location | caller_unreachable | no_owner | no_update | consent_unknown
     label: str
+
+
+class AssignmentView(BaseModel):
+    department: str
+    owner: str | None
+    assigned_at: datetime
+    accepted_at: datetime | None
+    default_owner_at: datetime | None
+    acknowledged_at: datetime | None = None
+    acknowledged_by: str | None = None
+    accepted_by: str | None = None
+    id: int | None = None
+    assigned_by: str | None = None
+    change_reason: str | None = None
+    department_display_name: str | None = None
+    operational_unit: str | None = None
+    owner_display_name: str | None = None
+    owner_role: str | None = None
+    staff_id: str | None = None
+    roster_area: str | None = None
+    fictional_personnel: bool = False
+    profile_recorded: bool = False
 
 
 class IncidentView(BaseModel):
@@ -65,6 +97,21 @@ class IncidentView(BaseModel):
     lng: float | None
     acknowledged: bool = False  # receipt only; never implies accepted
     critical: bool = False  # also listed in StateView.critical_alerts
+    assignment: AssignmentView | None = None
+    closed_at: datetime | None = None
+    closed_by: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    callback_state: str | None = None
+    priority: Literal['critical', 'high', 'medium', 'low'] = 'low'
+
+
+class StaffView(BaseModel):
+    id: str
+    name: str
+    role: str | None = None
+    on_call: bool = False
+    fictional: bool = True
 
 
 class DepartmentView(BaseModel):
@@ -72,6 +119,11 @@ class DepartmentView(BaseModel):
     assigned_1h: int
     accepted_1h: int
     silent: bool
+    display_name: str | None = None
+    operational_unit: str | None = None
+    active_incidents: int = 0
+    awaiting_acceptance: int = 0
+    staff: list[StaffView] = []
 
 
 class AlertView(BaseModel):
@@ -109,6 +161,8 @@ class StateView(BaseModel):
     departments: list[DepartmentView]
     alerts: list[AlertView]
     critical_alerts: list[CriticalAlertView] = []  # uncapped, shown apart from the top 10
+    call_mode: str = 'simulate'
+    automatic_live_enabled: bool = False
 
 
 class ReportView(BaseModel):
@@ -121,6 +175,8 @@ class ReportView(BaseModel):
     transcript: str
     created_at: datetime
     callback_ok: bool = False
+    callback_opt_out: bool = False
+    callback_eligible: bool = False
 
 
 class EventView(BaseModel):
@@ -137,34 +193,78 @@ class CallbackView(BaseModel):
     danger: bool
     summary: str
     called_at: datetime
+    id: int | None = None
+    state: str = 'unknown'
+    scheduled_at: datetime | None = None
+    completed_at: datetime | None = None
+    error_code: str | None = None
+    mode: str = 'legacy'
+    transcript: str = ''  # only the reviewer-authorized evidence response populates this
 
 
-class AssignmentView(BaseModel):
-    department: str
-    owner: str | None
-    assigned_at: datetime
-    accepted_at: datetime | None
-    default_owner_at: datetime | None
-    acknowledged_at: datetime | None = None
-    acknowledged_by: str | None = None
-    accepted_by: str | None = None
+class CallbackStatusView(BaseModel):
+    eligible: bool = False
+    reason: str = 'Callback eligibility has not been checked'
+    scheduled_at: datetime | None = None
+    call_mode: str = 'simulate'
+    attempts_used: int = 0
+    max_attempts: int = 2
+    automatic_live_enabled: bool = False
 
 
 class IncidentDetailView(IncidentView):
     reports: list[ReportView]
     events: list[EventView]
     callbacks: list[CallbackView]
-    assignment: AssignmentView | None
+    assignment_history: list[AssignmentView] = []
+    callback_status: CallbackStatusView = Field(default_factory=CallbackStatusView)
+
+
+class DepartmentAssignmentOption(BaseModel):
+    department: str
+    owners: list[str]
+    display_name: str | None = None
+    operational_unit: str | None = None
+    staff: list[StaffView] = []
+
+
+class AssignmentOptionsView(BaseModel):
+    recommended_department: str
+    area: str | None
+    departments: list[DepartmentAssignmentOption]
+    fictional_roster: bool = True
+
+
+class AssignmentHistoryEntry(BaseModel):
+    incident_id: int
+    title: str
+    status: Status
+    assignment: AssignmentView
+
+
+class AssignmentHistoryPage(BaseModel):
+    entries: list[AssignmentHistoryEntry]
+    next_before_id: int | None = None
 
 
 # --- Request bodies --------------------------------------------------------------------------
 
 class AcceptIn(BaseModel):
-    owner: str = Field(min_length=1)
+    owner: str = Field(min_length=1, max_length=80)
+    expected_assignment_id: int | None = Field(default=None, gt=0)
 
 
 class AcknowledgeIn(BaseModel):
-    by: str = Field(min_length=1)
+    by: str = Field(min_length=1, max_length=80)
+    expected_assignment_id: int | None = Field(default=None, gt=0)
+
+
+class ReassignIn(BaseModel):
+    department: str = Field(min_length=1, max_length=80)
+    owner: str | None = Field(default=None, min_length=1, max_length=80)
+    by: str = Field(min_length=1, max_length=80)
+    reason: str = Field(min_length=1, max_length=240)
+    expected_assignment_id: int | None = Field(default=None, gt=0)
 
 
 class CloseIn(BaseModel):
@@ -175,6 +275,16 @@ class CloseIn(BaseModel):
 class SimulateCallbackIn(BaseModel):
     outcome: Outcome
     danger: bool = False
+
+
+class RequestCallbackIn(BaseModel):
+    by: str = Field(min_length=1, max_length=80)
+    confirm_live: StrictBool = False
+
+
+class CallbackOptOutIn(BaseModel):
+    by: str = Field(min_length=1, max_length=80)
+    reason: Literal['opt_out', 'wrong_number'] = 'opt_out'
 
 
 class TwistIn(BaseModel):

@@ -68,14 +68,14 @@ def test_bad_row_in_scenario_rejected_before_reset(client, monkeypatch, tmp_path
     {'event': 'call_analyzed', 'call': {'call_id': 'bad-fields', 'call_analysis': {'custom_analysis_data': ['bad']}}},
     {'event': 'call_analyzed', 'call': {'call_id': 'bad-id', 'metadata': {'incident_id': -1}}},
 ])
-def test_authenticated_malformed_webhook_is_422(client, signed_webhook, payload):
+def test_authenticated_malformed_webhook_is_400(client, signed_webhook, payload):
     before = state(client)['incidents']
-    assert signed_webhook(payload).status_code == 422
+    assert signed_webhook(payload).status_code == 400
     assert state(client)['incidents'] == before
 
 
-def test_authenticated_invalid_json_is_422(client, signed_webhook):
-    assert signed_webhook(raw=b'{').status_code == 422
+def test_authenticated_invalid_json_is_400(client, signed_webhook):
+    assert signed_webhook(raw=b'{').status_code == 400
 
 
 def test_unsigned_webhook_rejected(client):
@@ -103,7 +103,7 @@ def test_unconfigured_signing_key_fails_closed(client, monkeypatch):
 
 def test_authenticated_unicode_and_duplicate_intake(client, signed_webhook):
     payload = {'event': 'call_analyzed', 'call': {
-        'call_id': 'unicode-demo', 'transcript': 'Agua en la calle — información',
+        'call_id': 'unicode-demo', 'agent_id': 'synthetic-intake-agent', 'transcript': 'Agua en la calle — información',
         'call_analysis': {'custom_analysis_data': {'location_text': 'Unknown place', 'hazard_type': 'flood'}},
     }}
     raw = json.dumps(payload, ensure_ascii=False).encode()
@@ -117,8 +117,9 @@ def test_authenticated_unicode_and_duplicate_intake(client, signed_webhook):
     assert any(d['kind'] == 'location' for d in unknown['debts'])
 
 
-def test_duplicate_signed_callback_preserves_events_and_risk(client, signed_webhook):
+def test_duplicate_signed_callback_preserves_events_and_risk(client, signed_webhook, dispatched_callback):
     i = incident_id(client)
+    dispatched_callback(i, 'callback-retry')
     payload = {'event': 'call_analyzed', 'call': {
         'call_id': 'callback-retry', 'metadata': {'incident_id': i, 'attempt_no': 1},
         'call_analysis': {'custom_analysis_data': {'outcome': 'worse'}},
@@ -134,7 +135,7 @@ def test_department_toggle_produces_one_alert_and_suppresses_nudge(client, clock
     client.post('/api/twists/dept_silent', json={'on': True})
     clock.tick()
     alerts = state(client)['alerts']
-    assert len(alerts) == 1 and alerts[0]['department'] == 'Street Services'
+    assert len(alerts) == 1 and alerts[0]['department'] == 'Stormwater Operations'
     events = client.get(f'/api/incidents/{i}').json()['events']
     assert not any(e['type'] == 'nudge' for e in events)
     assert any(e['type'] == 'nudge_suppressed' for e in events)
@@ -148,7 +149,11 @@ def test_department_toggle_produces_one_alert_and_suppresses_nudge(client, clock
 def test_real_department_threshold_and_acceptance_clear_alert(client):
     with Session(engine) as s:
         for n in range(4):
-            s.add(Assignment(incident_id=incident_id(client), department='Street Services'))
+            # Five distinct incidents, not five history rows for one handoff.
+            case = Incident(title=f'Synthetic threshold case {n}', hazard_type='pothole')
+            s.add(case)
+            s.flush()
+            s.add(Assignment(incident_id=case.id, department='Stormwater Operations'))
         s.commit()
     assert len(state(client)['alerts']) == 1
     with Session(engine) as s:

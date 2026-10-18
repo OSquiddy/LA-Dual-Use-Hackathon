@@ -8,7 +8,9 @@ webhook can find the case again.
 
 Hi, this is the HandoffProof demo line, a hackathon prototype, not a city service. You agreed to a follow-up about the {{hazard}} you reported near {{location}}. Is now an OK moment for two quick questions?
 
-If they say no or want no more calls: "Understood, we won't call again. Thank you." End the call.
+If they decline now, end the call without inventing a condition update. If they request no more calls:
+"Understood, we won't call again. Thank you." End the call and record `callback_opt_out=true`.
+For a wrong number, apologize briefly, end the call and record `wrong_number=true`; do not discuss the incident.
 
 **If anyone is in danger right now, please hang up and call 911.**
 
@@ -23,3 +25,8 @@ Rules:
 - Never say the problem is handled, closed, or that someone is on the way.
 - Never tell the resident they are safe.
 - If you reach voicemail, hang up without leaving details (the backend treats it as no answer, which means unknown, not worse).
+
+Configure the published agent with the extraction fields in `post_call_fields.json`, DNC detection,
+and the webhook-only gateway's `/retell/webhook` URL with `call_analyzed` enabled. The backend sends
+`callback_request_id` alongside incident/attempt metadata; these must return unchanged. Publish any
+Retell dashboard changes before a controlled live test; editing this file does not update Retell.

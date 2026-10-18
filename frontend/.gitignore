@@ -1,0 +1,4 @@
+# Browser test output can contain transient screenshots; publish only reviewed artifacts.
+test-results/
+playwright-report/
+artifacts/

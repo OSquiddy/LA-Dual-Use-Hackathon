@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from sqlmodel import Session
 
 from app.engine.audit import log_event
+from app.engine.evidence import alert_reason
 from app.models import Incident
 from app.timeutil import utcnow
 
@@ -18,8 +19,6 @@ def flag(
     s: Session,
     incident: Incident,
     kind: str,
-    reason: str,
-    quote: str = "",
     evidence: Sequence[str] = (),
     actor: str = "engine",
 ) -> None:
@@ -27,6 +26,7 @@ def flag(
         return
     if incident.critical and incident.critical_kind == "evidence" and kind == "uncertainty":
         return
+    reason = alert_reason(s, incident, evidence=evidence, kind=kind)
     if incident.critical and incident.critical_reason == reason:
         return
     if not incident.critical:
@@ -34,7 +34,9 @@ def flag(
     incident.critical = True
     incident.critical_kind = kind
     incident.critical_reason = reason
-    incident.critical_quote = quote
+    # Source references, not conversations, belong in an alert. Older stored quotes
+    # remain untouched until a new alert; API projections never expose them.
+    incident.critical_quote = ""
     incident.critical_evidence = list(evidence)
     if incident.status == "open":
         incident.status = "escalated"

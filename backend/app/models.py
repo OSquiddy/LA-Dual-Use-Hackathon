@@ -39,7 +39,7 @@ class Report(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     incident_id: int | None = Field(default=None, foreign_key="incident.id", index=True)
     source: str
-    call_id: str = Field(index=True)
+    call_id: str = Field(index=True, unique=True)
     phone: str | None = None
     location_text: str | None = None
     lat: float | None = None
@@ -48,6 +48,7 @@ class Report(SQLModel, table=True):
     danger_words: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     anyone_in_danger: bool = False
     callback_ok: bool = False
+    callback_opt_out: bool = False
     transcript: str = ""
     created_at: datetime = Field(default_factory=utcnow)
 
@@ -72,13 +73,14 @@ class Assignment(SQLModel, table=True):
     accepted_at: datetime | None = None
     accepted_by: str | None = None
     default_owner_at: datetime | None = None
+    responsibility_profile: dict | None = Field(default=None, sa_column=Column(JSON, nullable=True))
 
 
 class Callback(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     incident_id: int = Field(foreign_key="incident.id", index=True)
     report_id: int | None = Field(default=None, foreign_key="report.id")  # the consenting report
-    call_id: str = Field(index=True)
+    call_id: str = Field(index=True, unique=True)
     phone: str | None = None
     attempt_no: int
     outcome: str | None = None  # worse | same | better | no_answer; None while ringing
@@ -86,6 +88,24 @@ class Callback(SQLModel, table=True):
     summary: str = ""
     called_at: datetime = Field(default_factory=utcnow)
     completed_at: datetime | None = None
+    state: str = "unknown"  # scheduled | dispatching | calling | completed | failed | cancelled | unknown
+    scheduled_at: datetime | None = None
+    dispatch_started_at: datetime | None = None
+    result_due_at: datetime | None = None  # durable simulation completion deadline
+    request_key: str | None = Field(default=None, index=True, unique=True)
+    mode: str = "legacy"  # historical rows are never redispatched
+    live_authorized: bool = False
+    automatic: bool = True  # manual one-call confirmation never enables queued automatic calls
+    error_code: str | None = None  # finite codes, never raw provider exception text
+    transcript: str = ""  # restricted evidence only
+    result_recorded: bool = False
+
+
+class ContactPreference(SQLModel, table=True):
+    phone: str = Field(primary_key=True)  # private E.164 number; never projected into public API
+    reason: str  # opt_out | wrong_number
+    changed_at: datetime = Field(default_factory=utcnow)
+    changed_by: str = "resident"
 
 
 class Event(SQLModel, table=True):

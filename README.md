@@ -6,7 +6,7 @@ HandoffProof is a **software-only AI-powered incident intelligence and accountab
 
 **Scope / safety:** This is **not** an official City of Los Angeles service and is not connected to 911, municipal ticket systems, or any emergency dispatcher. It never claims safety, auto-closes cases, or calls anyone without explicit permission. **Wireless sensing / ESP32 / physical hardware is excluded** from this MVP; port/grid/defense-related handoffs are prospective software applications, not deployed integrations.
 
-**Current scaffold vs revised plan:** The project already has running stubs, seed loader, simulated callbacks, API/UI fixture contracts and human Accept/Close. Linking (B4), new acknowledgment state, consent persistence/enforcement and a persistent critical-alert lane still require coordinated implementation. Do **not** treat the new plan as code already implemented.
+**Current implementation:** Incident linking, evidence-based risk, persistent critical alerts, consent-gated callback jobs, acknowledgment, named acceptance/closure and audited reassignment are implemented. The operations workspace adds a configurable fictional staff directory and preserves historical assignments. The build plans retain their original task IDs; use the tests and current feature documentation to assess implementation status.
 
 - **What we're building and why:** [HandoffProof — Build Plan & Judge Defense.md](HandoffProof%20—%20Build%20Plan%20&%20Judge%20Defense.md)
 - **Who builds what, in parallel:** [HandoffProof — Parallel Build Plan (3 Computers).md](HandoffProof%20—%20Parallel%20Build%20Plan%20(3%20Computers).md)
@@ -32,27 +32,41 @@ python -m venv .venv
 # Windows: .venv\Scripts\activate    macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 test -f ../.env || cp ../.env.example ../.env  # local only; never overwrite configured secrets
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+CALL_MODE=simulate uvicorn app.main:app --reload --host 127.0.0.1 --port 8001 --no-access-log
 pytest                               # contract + smoke tests
 ```
 
-Load the storm-night scenario: `curl -X POST localhost:8000/api/demo/reset -H "content-type: application/json" -d '{"seed":"storm_night"}'`. API docs are at http://localhost:8000/docs.
+Load the storm-night scenario: `curl -X POST localhost:8001/api/demo/reset -H "content-type: application/json" -d '{"seed":"storm_night"}'`. API docs are at http://localhost:8001/docs.
 
 **Dashboard** (Node 18+), from `frontend/`:
 
 ```bash
 npm install
 test -f .env.local || cp .env.example .env.local    # set VITE_API=live for local integration
-npm run dev                          # http://localhost:5173 · press T for the twist panel
-npm run build                        # strict type-check + production build
-npm run check:readiness              # renders the real dashboard against synthetic states
+npm run dev -- --port 5173 --strictPort # http://127.0.0.1:5173 · separate Demo controls / T shortcut
 ```
 
-Full integration check (12 consent × outcome scenarios × 4 handoff stages): from `backend/`, run `HANDOFFPROOF_INTEGRATION_SNAPSHOTS=<dir> pytest tests/test_phase01_acceptance.py`, then from `frontend/` run `npm run check:phase01 -- <dir>`.
+Set `VITE_API=live` and `VITE_BACKEND_URL=http://127.0.0.1:8001` for local integration. The public webhook gateway does not expose dashboard APIs; cross-machine dashboard sharing needs a separate agreed setup.
 
-Set `VITE_API=live` to poll the backend. `VITE_BACKEND_URL` can point at PC-B's machine on the same Wi-Fi (e.g. `http://192.168.1.20:8000`).
+**Retell public ingress:** Keep the main backend private on `127.0.0.1:8001`. Run the separate webhook-only gateway from `backend/`:
 
-**Retell:** Intake and Callback prompts and extraction fields are browser-tested. The webhook now verifies Retell's signature on the raw body and `callback_ok` is persisted and enforced, so no caller is called back without a clear yes. **Before exposing anything publicly:** tunnelling port 8000 also exposes `/api/*` (including `/api/demo/reset`), which has no authentication yet. Add a token or expose only `/retell/webhook` first. Keep `CALL_MODE=simulate` until then, and only call explicitly consenting test participants.
+```bash
+CALL_MODE=simulate .venv/bin/python -m uvicorn webhook_gateway:app --host 127.0.0.1 --port 8002 --no-access-log
+```
+
+Tunnel **only port 8002**, using `cloudflared tunnel --url http://127.0.0.1:8002` or `ngrok http 8002`. Set the Retell agent's webhook URL to `<public-gateway-url>/retell/webhook`; set `PUBLIC_BASE_URL` locally to that public base URL. Never point the public tunnel at port 8001. The gateway exposes no dashboard APIs, reset endpoint, docs or OpenAPI route. Both gateway and backend verify signatures using the official pinned `retell-sdk` and the `RETELL_API_KEY` marked for webhooks. The backend authorizes the configured Intake/Callback agent identities and persists call-ID uniqueness.
+
+See [backend/WEBHOOK_SETUP.md](backend/WEBHOOK_SETUP.md) for the exact two-terminal startup, migration behavior, tests and remaining real-provider verification. Keep `CALL_MODE=simulate`; a successful local synthetic check does not certify a genuine Retell delivery.
+
+**Automatic resident callbacks:** Durable attempts, consent and DNC checks, bounded retries, correlated results and authorized one-call controls are implemented. Keep `LIVE_CALLBACKS_ENABLED=0` while preparing a live test. See [backend/AUTOMATIC_CALLBACKS.md](backend/AUTOMATIC_CALLBACKS.md) for verification results, Retell account configuration, pause/resume controls, exact commands and the controlled live-test procedure. Acknowledge, Accept and Close now require the private reviewer key as well as a named actor.
+
+When automatic live calling has been explicitly enabled, save `LIVE_CALLBACKS_ENABLED=0` in the private root `.env` to stop new automatic dispatches without restarting. Existing calls continue; saving `1` resumes an already-authorized process and can release overdue eligible incidents. Default example settings remain in simulation mode.
+
+**Incident evidence:** Critical Review shows concise, source-grounded assessments. Full intake transcripts require reviewer authorization in the incident drawer; configure the separate `REVIEWER_API_KEY` privately in the root `.env`. Ordinary dashboard responses omit transcripts. See [backend/EVIDENCE_REVIEW.md](backend/EVIDENCE_REVIEW.md) for access setup, consent semantics and test commands.
+
+**Responsibility:** Every queue and Critical Review shows the responsible department, assigned individual, recorded acknowledgment/acceptance, and timestamps. Open incident detail to record a named human action, review assignment history, or reassign using the configured fictional roster. Reassignment requires the existing reviewer key in its password field; unauthorized requests are rejected. See [backend/ASSIGNMENT_ACCOUNTABILITY.md](backend/ASSIGNMENT_ACCOUNTABILITY.md) for lifecycle semantics, approved API changes and verification results.
+
+**Operations workspace redesign:** Search/filter/sort incidents, inspect department units and fictional staff, review the paginated assignment audit trail, and open the sectioned incident drawer. The complete official logo appears on a light surface and opens at full size. See [frontend/REDESIGN.md](frontend/REDESIGN.md) for the ten-person roster, routing assumptions, additive assignment-profile migration, changed files, verification and screenshots. Existing records are not reseeded or rewritten.
 
 ## How the pieces join
 

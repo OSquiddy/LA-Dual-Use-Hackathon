@@ -49,6 +49,8 @@ def test_combined_seed_intake_followup_and_human_handoff(
             'summary': f'SYNTHETIC combined evidence: {outcome}',
         }},
     }}
+    if outcome == 'no_answer':
+        callback['call']['disconnection_reason'] = 'dial_no_answer'
     assert signed_webhook(callback).status_code == 204
     answered = client.get(path).json()
     assert signed_webhook(callback).status_code == 204
