@@ -4,6 +4,9 @@ import type { AppState, AssignmentHistoryPage, AssignmentOptions, IncidentDetail
 
 export const API_MODE = import.meta.env.VITE_API ?? "fixture";
 
+/** Absolute backend origin for production (Render). Empty = same-origin / Vite proxy in local dev. */
+const API_BASE = (import.meta.env.VITE_BACKEND_URL ?? "").replace(/\/$/, "");
+
 /** Resolves to "sent" in live mode and "skipped" in fixture mode, so the UI can say which. */
 export type ActionResult = "sent" | "skipped";
 
@@ -14,10 +17,14 @@ export class ApiError extends Error {
   }
 }
 
+function apiUrl(path: string): string {
+  return `${API_BASE}${path}`;
+}
+
 async function request<T>(path: string, init: RequestInit = {}, reviewerKey?: string): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (reviewerKey !== undefined) headers.Authorization = `Bearer ${reviewerKey}`;
-  const res = await fetch(path, { ...init, headers });
+  const res = await fetch(apiUrl(path), { ...init, headers });
   if (!res.ok) {
     let detail = "";
     try {
