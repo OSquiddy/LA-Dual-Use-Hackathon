@@ -37,17 +37,21 @@ PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")
 CALL_MODE = os.getenv("CALL_MODE", "simulate")  # simulate | live
 TIMING_PROFILE = os.getenv("TIMING_PROFILE", "demo")  # demo | real
 TIMING = TIMING_PROFILES[TIMING_PROFILE]
+
+
 def _resolve_db_path() -> str:
-    """Ensure the SQLite file's parent directory exists (Render disks, /tmp, etc.)."""
-    raw = os.getenv("DB_PATH") or str(BACKEND_DIR / "handoffproof.db")
+    """SQLite path. On Render, put a paid Disk at /var/data and set DB_PATH=/var/data/handoffproof.db."""
+    raw = (os.getenv("DB_PATH") or "").strip() or str(BACKEND_DIR / "handoffproof.db")
     path = Path(raw)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-    except OSError:
-        # Common on Render when DB_PATH=/var/data/... but no disk is mounted.
-        fallback = BACKEND_DIR / "handoffproof.db"
-        fallback.parent.mkdir(parents=True, exist_ok=True)
-        return str(fallback)
+    except OSError as exc:
+        raise RuntimeError(
+            f"Cannot create SQLite directory {path.parent} ({exc}). "
+            "On Render: upgrade off Free, add a Disk mounted at /var/data, "
+            "set DB_PATH=/var/data/handoffproof.db, then redeploy. "
+            "Or clear DB_PATH to use an ephemeral file under the app directory."
+        ) from exc
     return str(path)
 
 
