@@ -24,7 +24,14 @@ function apiUrl(path: string): string {
 async function request<T>(path: string, init: RequestInit = {}, reviewerKey?: string): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (reviewerKey !== undefined) headers.Authorization = `Bearer ${reviewerKey}`;
-  const res = await fetch(apiUrl(path), { ...init, headers });
+  const url = apiUrl(path);
+  let res: Response;
+  try {
+    res = await fetch(url, { ...init, headers });
+  } catch (e) {
+    const why = e instanceof Error ? e.message : String(e);
+    throw new Error(`Backend unreachable at ${url || path} (${why}). Set VITE_BACKEND_URL to your Render API origin and redeploy.`);
+  }
   if (!res.ok) {
     let detail = "";
     try {
@@ -33,7 +40,7 @@ async function request<T>(path: string, init: RequestInit = {}, reviewerKey?: st
     } catch {
       // no JSON body
     }
-    throw new ApiError(res.status, detail, init.method ?? "GET", path);
+    throw new ApiError(res.status, detail, init.method ?? "GET", url || path);
   }
   return res.json() as Promise<T>;
 }
