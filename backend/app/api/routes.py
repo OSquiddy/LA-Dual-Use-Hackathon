@@ -15,6 +15,7 @@ from app.contracts import (
 )
 from app.db import get_session, reset_db
 from app.engine import ladder, seeds, twists, views
+from app.engine.ingest import ingest_report
 from app.models import Incident
 from app.voice import simulator
 
@@ -26,6 +27,13 @@ def _incident_or_404(s: Session, incident_id: int) -> Incident:
     if incident is None:
         raise HTTPException(404, f"incident {incident_id} not found")
     return incident
+
+
+def _human_name(value: str) -> str:
+    name = value.strip()
+    if not name:
+        raise HTTPException(422, "A named human is required")
+    return name
 
 
 @router.get("/state", response_model=StateView)
@@ -41,21 +49,21 @@ def get_incident(incident_id: int, s: Session = Depends(get_session)):
 @router.post("/incidents/{incident_id}/acknowledge", response_model=IncidentView)
 def acknowledge_incident(incident_id: int, body: AcknowledgeIn, s: Session = Depends(get_session)):
     incident = _incident_or_404(s, incident_id)
-    ladder.acknowledge(s, incident, body.by)
+    ladder.acknowledge(s, incident, _human_name(body.by))
     return views.incident_view(s, incident)
 
 
 @router.post("/incidents/{incident_id}/accept", response_model=IncidentView)
 def accept_incident(incident_id: int, body: AcceptIn, s: Session = Depends(get_session)):
     incident = _incident_or_404(s, incident_id)
-    ladder.accept(s, incident, body.owner)
+    ladder.accept(s, incident, _human_name(body.owner))
     return views.incident_view(s, incident)
 
 
 @router.post("/incidents/{incident_id}/close", response_model=IncidentView)
 def close_incident(incident_id: int, body: CloseIn, s: Session = Depends(get_session)):
     incident = _incident_or_404(s, incident_id)
-    ladder.close(s, incident, body.by, body.note)
+    ladder.close(s, incident, _human_name(body.by), body.note)
     return views.incident_view(s, incident)
 
 
@@ -78,10 +86,14 @@ def set_twist(name: str, body: TwistIn, s: Session = Depends(get_session)):
 
 @router.post("/demo/reset", response_model=StateView)
 def reset_demo(body: ResetIn, s: Session = Depends(get_session)):
-    if not seeds.seed_exists(body.seed):
-        raise HTTPException(404, f"seed {body.seed!r} not found")
+    try:
+        domain, reports = seeds.prepare_seed(body.seed)
+    except (OSError, ValueError, TypeError, OverflowError):
+        raise HTTPException(404, "Unknown or invalid report scenario") from None
+    # All rows have been validated and materialized before touching current data.
     reset_db()
-    twists.reset()
-    seeds.load_seed(body.seed)
+    twists.reset(domain=domain)
+    for report in reports:
+        ingest_report(report)
     s.expire_all()
     return views.state_view(s)

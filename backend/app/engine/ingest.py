@@ -24,6 +24,8 @@ def ingest_report(r: ReportIn) -> int:
         report.created_at = to_db(r.created_at)
         hit = None
         if report.lat is None or report.lng is None:
+            # A partial coordinate pair is unresolved, not a usable map position.
+            report.lat, report.lng = None, None
             hit = geocode(report.location_text)
             if hit:
                 report.lat, report.lng = hit.lat, hit.lng

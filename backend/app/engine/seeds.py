@@ -1,4 +1,4 @@
-"""B2: replay a seed file through ingest_report, exactly like live calls arrive."""
+"""Validate complete scenarios before destructive demo reset, then ingest each source report."""
 import json
 from datetime import datetime, timedelta, timezone
 
@@ -8,36 +8,44 @@ from app.engine import twists
 from app.engine.ingest import ingest_report
 
 
+def prepare_seed(name: str) -> tuple[str, list[ReportIn]]:
+    if not name.isidentifier():
+        raise ValueError("Invalid scenario name")
+    data = json.loads((SEEDS_DIR / f"{name}.json").read_text(encoding="utf-8"))
+    if not isinstance(data, dict) or not isinstance(data.get("reports"), list) or not data["reports"]:
+        raise ValueError("Not a report scenario")
+    domain = data.get("domain", "storm")
+    if not isinstance(domain, str) or not domain:
+        raise ValueError("Invalid scenario domain")
+    now = datetime.now(timezone.utc)
+    reports = []
+    for row in data["reports"]:
+        if not isinstance(row, dict):
+            raise ValueError("Invalid scenario row")
+        fields = {k: row[k] for k in ReportIn.model_fields if k in row}
+        fields.update(source="seed", created_at=now + timedelta(seconds=row.get("offset_s", 0)))
+        if row.get("demo_resident") and DEMO_RESIDENT_PHONE:
+            fields["phone"] = DEMO_RESIDENT_PHONE
+        report = ReportIn.model_validate(fields)
+        if not report.call_id.strip():
+            raise ValueError("Missing scenario call ID")
+        reports.append(report)
+    if len({r.call_id for r in reports}) != len(reports):
+        raise ValueError("Duplicate scenario call IDs")
+    return domain, reports
+
+
 def seed_exists(name: str) -> bool:
-    return name.isidentifier() and (SEEDS_DIR / f"{name}.json").exists()
+    try:
+        prepare_seed(name)
+    except (OSError, ValueError, TypeError, OverflowError):
+        return False
+    return True
 
 
 def load_seed(name: str) -> int:
-    """Load seeds/<name>.json. offset_s is relative to now (negative = already happened).
-
-    The report marked "demo_resident" gets DEMO_RESIDENT_PHONE so the live callback rings a teammate
-    (who must have agreed to it). Only rows with "callback_ok": true are ever called back.
-    TODO(B2): replay rows with a positive offset_s over time (needed for the surge twist).
-    """
-    data = json.loads((SEEDS_DIR / f"{name}.json").read_text(encoding="utf-8"))
-    twists.reset(domain=data.get("domain", "storm"))
-    now = datetime.now(timezone.utc)
-    for row in data["reports"]:
-        phone = DEMO_RESIDENT_PHONE if row.get("demo_resident") and DEMO_RESIDENT_PHONE else row.get("phone")
-        ingest_report(
-            ReportIn(
-                source="seed",
-                call_id=row["call_id"],
-                phone=phone,
-                location_text=row.get("location_text"),
-                lat=row.get("lat"),
-                lng=row.get("lng"),
-                hazard_type=row["hazard_type"],
-                danger_words=row.get("danger_words", []),
-                anyone_in_danger=row.get("anyone_in_danger", False),
-                callback_ok=row.get("callback_ok", False),
-                transcript=row.get("transcript", ""),
-                created_at=now + timedelta(seconds=row.get("offset_s", 0)),
-            )
-        )
-    return len(data["reports"])
+    domain, reports = prepare_seed(name)
+    twists.reset(domain=domain)
+    for report in reports:
+        ingest_report(report)
+    return len(reports)

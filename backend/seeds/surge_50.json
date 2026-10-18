@@ -1,0 +1,507 @@
+{
+  "name": "surge_50",
+  "domain": "storm",
+  "_note": "Fifty fictional reports in four synthetic clusters. Replayed immediately for the demo toggle; no phones or callback consent.",
+  "reports": [
+    {
+      "call_id": "seed-surge-1",
+      "offset_s": -60,
+      "location_text": "Synthetic surge cluster 1",
+      "lat": 34.1,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 1: water across the road."
+    },
+    {
+      "call_id": "seed-surge-2",
+      "offset_s": -59,
+      "location_text": "Synthetic surge cluster 2",
+      "lat": 34.115,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 2: water across the road."
+    },
+    {
+      "call_id": "seed-surge-3",
+      "offset_s": -58,
+      "location_text": "Synthetic surge cluster 3",
+      "lat": 34.13,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 3: water across the road."
+    },
+    {
+      "call_id": "seed-surge-4",
+      "offset_s": -57,
+      "location_text": "Synthetic surge cluster 4",
+      "lat": 34.145,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 4: water across the road."
+    },
+    {
+      "call_id": "seed-surge-5",
+      "offset_s": -56,
+      "location_text": "Synthetic surge cluster 1",
+      "lat": 34.1,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 1: water across the road."
+    },
+    {
+      "call_id": "seed-surge-6",
+      "offset_s": -55,
+      "location_text": "Synthetic surge cluster 2",
+      "lat": 34.115,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 2: water across the road."
+    },
+    {
+      "call_id": "seed-surge-7",
+      "offset_s": -54,
+      "location_text": "Synthetic surge cluster 3",
+      "lat": 34.13,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 3: water across the road."
+    },
+    {
+      "call_id": "seed-surge-8",
+      "offset_s": -53,
+      "location_text": "Synthetic surge cluster 4",
+      "lat": 34.145,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 4: water across the road."
+    },
+    {
+      "call_id": "seed-surge-9",
+      "offset_s": -52,
+      "location_text": "Synthetic surge cluster 1",
+      "lat": 34.1,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 1: water across the road."
+    },
+    {
+      "call_id": "seed-surge-10",
+      "offset_s": -51,
+      "location_text": "Synthetic surge cluster 2",
+      "lat": 34.115,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 2: water across the road."
+    },
+    {
+      "call_id": "seed-surge-11",
+      "offset_s": -50,
+      "location_text": "Synthetic surge cluster 3",
+      "lat": 34.13,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 3: water across the road."
+    },
+    {
+      "call_id": "seed-surge-12",
+      "offset_s": -49,
+      "location_text": "Synthetic surge cluster 4",
+      "lat": 34.145,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 4: water across the road."
+    },
+    {
+      "call_id": "seed-surge-13",
+      "offset_s": -48,
+      "location_text": "Synthetic surge cluster 1",
+      "lat": 34.1,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 1: water across the road."
+    },
+    {
+      "call_id": "seed-surge-14",
+      "offset_s": -47,
+      "location_text": "Synthetic surge cluster 2",
+      "lat": 34.115,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 2: water across the road."
+    },
+    {
+      "call_id": "seed-surge-15",
+      "offset_s": -46,
+      "location_text": "Synthetic surge cluster 3",
+      "lat": 34.13,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 3: water across the road."
+    },
+    {
+      "call_id": "seed-surge-16",
+      "offset_s": -45,
+      "location_text": "Synthetic surge cluster 4",
+      "lat": 34.145,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 4: water across the road."
+    },
+    {
+      "call_id": "seed-surge-17",
+      "offset_s": -44,
+      "location_text": "Synthetic surge cluster 1",
+      "lat": 34.1,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 1: water across the road."
+    },
+    {
+      "call_id": "seed-surge-18",
+      "offset_s": -43,
+      "location_text": "Synthetic surge cluster 2",
+      "lat": 34.115,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 2: water across the road."
+    },
+    {
+      "call_id": "seed-surge-19",
+      "offset_s": -42,
+      "location_text": "Synthetic surge cluster 3",
+      "lat": 34.13,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 3: water across the road."
+    },
+    {
+      "call_id": "seed-surge-20",
+      "offset_s": -41,
+      "location_text": "Synthetic surge cluster 4",
+      "lat": 34.145,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 4: water across the road."
+    },
+    {
+      "call_id": "seed-surge-21",
+      "offset_s": -40,
+      "location_text": "Synthetic surge cluster 1",
+      "lat": 34.1,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 1: water across the road."
+    },
+    {
+      "call_id": "seed-surge-22",
+      "offset_s": -39,
+      "location_text": "Synthetic surge cluster 2",
+      "lat": 34.115,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 2: water across the road."
+    },
+    {
+      "call_id": "seed-surge-23",
+      "offset_s": -38,
+      "location_text": "Synthetic surge cluster 3",
+      "lat": 34.13,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 3: water across the road."
+    },
+    {
+      "call_id": "seed-surge-24",
+      "offset_s": -37,
+      "location_text": "Synthetic surge cluster 4",
+      "lat": 34.145,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 4: water across the road."
+    },
+    {
+      "call_id": "seed-surge-25",
+      "offset_s": -36,
+      "location_text": "Synthetic surge cluster 1",
+      "lat": 34.1,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 1: water across the road."
+    },
+    {
+      "call_id": "seed-surge-26",
+      "offset_s": -35,
+      "location_text": "Synthetic surge cluster 2",
+      "lat": 34.115,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 2: water across the road."
+    },
+    {
+      "call_id": "seed-surge-27",
+      "offset_s": -34,
+      "location_text": "Synthetic surge cluster 3",
+      "lat": 34.13,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 3: water across the road."
+    },
+    {
+      "call_id": "seed-surge-28",
+      "offset_s": -33,
+      "location_text": "Synthetic surge cluster 4",
+      "lat": 34.145,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 4: water across the road."
+    },
+    {
+      "call_id": "seed-surge-29",
+      "offset_s": -32,
+      "location_text": "Synthetic surge cluster 1",
+      "lat": 34.1,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 1: water across the road."
+    },
+    {
+      "call_id": "seed-surge-30",
+      "offset_s": -31,
+      "location_text": "Synthetic surge cluster 2",
+      "lat": 34.115,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 2: water across the road."
+    },
+    {
+      "call_id": "seed-surge-31",
+      "offset_s": -30,
+      "location_text": "Synthetic surge cluster 3",
+      "lat": 34.13,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 3: water across the road."
+    },
+    {
+      "call_id": "seed-surge-32",
+      "offset_s": -29,
+      "location_text": "Synthetic surge cluster 4",
+      "lat": 34.145,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 4: water across the road."
+    },
+    {
+      "call_id": "seed-surge-33",
+      "offset_s": -28,
+      "location_text": "Synthetic surge cluster 1",
+      "lat": 34.1,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 1: water across the road."
+    },
+    {
+      "call_id": "seed-surge-34",
+      "offset_s": -27,
+      "location_text": "Synthetic surge cluster 2",
+      "lat": 34.115,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 2: water across the road."
+    },
+    {
+      "call_id": "seed-surge-35",
+      "offset_s": -26,
+      "location_text": "Synthetic surge cluster 3",
+      "lat": 34.13,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 3: water across the road."
+    },
+    {
+      "call_id": "seed-surge-36",
+      "offset_s": -25,
+      "location_text": "Synthetic surge cluster 4",
+      "lat": 34.145,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 4: water across the road."
+    },
+    {
+      "call_id": "seed-surge-37",
+      "offset_s": -24,
+      "location_text": "Synthetic surge cluster 1",
+      "lat": 34.1,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 1: water across the road."
+    },
+    {
+      "call_id": "seed-surge-38",
+      "offset_s": -23,
+      "location_text": "Synthetic surge cluster 2",
+      "lat": 34.115,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 2: water across the road."
+    },
+    {
+      "call_id": "seed-surge-39",
+      "offset_s": -22,
+      "location_text": "Synthetic surge cluster 3",
+      "lat": 34.13,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 3: water across the road."
+    },
+    {
+      "call_id": "seed-surge-40",
+      "offset_s": -21,
+      "location_text": "Synthetic surge cluster 4",
+      "lat": 34.145,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 4: water across the road."
+    },
+    {
+      "call_id": "seed-surge-41",
+      "offset_s": -20,
+      "location_text": "Synthetic surge cluster 1",
+      "lat": 34.1,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 1: water across the road."
+    },
+    {
+      "call_id": "seed-surge-42",
+      "offset_s": -19,
+      "location_text": "Synthetic surge cluster 2",
+      "lat": 34.115,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 2: water across the road."
+    },
+    {
+      "call_id": "seed-surge-43",
+      "offset_s": -18,
+      "location_text": "Synthetic surge cluster 3",
+      "lat": 34.13,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 3: water across the road."
+    },
+    {
+      "call_id": "seed-surge-44",
+      "offset_s": -17,
+      "location_text": "Synthetic surge cluster 4",
+      "lat": 34.145,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 4: water across the road."
+    },
+    {
+      "call_id": "seed-surge-45",
+      "offset_s": -16,
+      "location_text": "Synthetic surge cluster 1",
+      "lat": 34.1,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 1: water across the road."
+    },
+    {
+      "call_id": "seed-surge-46",
+      "offset_s": -15,
+      "location_text": "Synthetic surge cluster 2",
+      "lat": 34.115,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 2: water across the road."
+    },
+    {
+      "call_id": "seed-surge-47",
+      "offset_s": -14,
+      "location_text": "Synthetic surge cluster 3",
+      "lat": 34.13,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 3: water across the road."
+    },
+    {
+      "call_id": "seed-surge-48",
+      "offset_s": -13,
+      "location_text": "Synthetic surge cluster 4",
+      "lat": 34.145,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 4: water across the road."
+    },
+    {
+      "call_id": "seed-surge-49",
+      "offset_s": -12,
+      "location_text": "Synthetic surge cluster 1",
+      "lat": 34.1,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 1: water across the road."
+    },
+    {
+      "call_id": "seed-surge-50",
+      "offset_s": -11,
+      "location_text": "Synthetic surge cluster 2",
+      "lat": 34.115,
+      "lng": -118.2,
+      "hazard_type": "water_on_road",
+      "callback_ok": false,
+      "transcript": "Synthetic demo report for cluster 2: water across the road."
+    }
+  ]
+}

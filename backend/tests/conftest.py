@@ -55,3 +55,26 @@ class Clock:
 @pytest.fixture
 def clock():
     return Clock()
+
+
+@pytest.fixture
+def signed_webhook(client, monkeypatch):
+    """Authenticate synthetic payloads with a test-only key; never read local Retell secrets."""
+    import hashlib
+    import hmac
+    import json
+    import time
+    from app.voice import webhooks
+
+    key = "synthetic-test-signing-key"
+    monkeypatch.setattr(webhooks, "RETELL_API_KEY", key)
+
+    def send(payload=None, *, raw=None, timestamp=None):
+        raw = raw if raw is not None else json.dumps(payload).encode()
+        timestamp = str(timestamp if timestamp is not None else int(time.time() * 1000))
+        digest = hmac.new(key.encode(), raw + timestamp.encode(), hashlib.sha256).hexdigest()
+        return client.post('/retell/webhook', content=raw, headers={
+            'Content-Type': 'application/json', 'x-retell-signature': f'v={timestamp},d={digest}',
+        })
+
+    return send

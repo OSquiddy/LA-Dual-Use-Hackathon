@@ -4,7 +4,8 @@ from datetime import timedelta
 
 from sqlmodel import Session, select
 
-from app.config import DEPT_SILENCE_MIN_ASSIGNED  # noqa: F401
+from app.config import DEPT_SILENCE_MIN_ASSIGNED
+from app.engine import twists
 from app.contracts import AlertView, DepartmentView
 from app.models import Assignment
 from app.timeutil import utcnow
@@ -15,14 +16,22 @@ def department_stats(s: Session) -> list[DepartmentView]:
     rows = s.exec(select(Assignment).where(Assignment.assigned_at >= since)).all()
     assigned = Counter(a.department for a in rows)
     accepted = Counter(a.department for a in rows if a.accepted_at)
-    # TODO(B12): silent = assigned >= DEPT_SILENCE_MIN_ASSIGNED and accepted == 0, or twists.dept_silent
     return [
-        DepartmentView(name=name, assigned_1h=assigned[name], accepted_1h=accepted[name], silent=False)
+        DepartmentView(
+            name=name, assigned_1h=assigned[name], accepted_1h=accepted[name],
+            silent=(assigned[name] >= DEPT_SILENCE_MIN_ASSIGNED and accepted[name] == 0)
+            or (twists.current().dept_silent and name == "Street Services"),
+        )
         for name in sorted(assigned)
     ]
 
 
 def alerts(s: Session) -> list[AlertView]:
-    """TODO(B12): one department_silent alert per silent department, e.g.
-    "Street Services accepted 0 of 12 in the last hour", and suppress that department's nudges."""
-    return []
+    """One operational alert per department; critical incident alerts remain independent."""
+    return [
+        AlertView(
+            type="department_silent", department=d.name,
+            text=f"{d.name} accepted {d.accepted_1h} of {d.assigned_1h} in the last hour",
+        )
+        for d in department_stats(s) if d.silent
+    ]
