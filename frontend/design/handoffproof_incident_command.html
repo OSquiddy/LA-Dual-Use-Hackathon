@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HandoffProof — Accountable Incident Handoff & Retell AI Orchestration</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          },
+          colors: {
+            surface: {
+              DEFAULT: '#09090b',
+              panel: '#0e0e12',
+              card: '#121216',
+              elevated: '#17171d',
+              border: 'rgba(255, 255, 255, 0.07)',
+              borderStrong: 'rgba(255, 255, 255, 0.14)',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      background-color: #09090b;
+      color: #e4e4e7;
+    }
+
+    /* Minimal Linear-style subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    /* Waveform visualizer */
+    .audio-bar {
+      width: 2.5px;
+      border-radius: 9999px;
+      background: #818cf8;
+      display: inline-block;
+      margin: 0 1px;
+      transition: height 0.15s ease;
+    }
+    .playing .audio-bar:nth-child(2n) { animation: wave1 0.7s infinite alternate ease-in-out; }
+    .playing .audio-bar:nth-child(2n+1) { animation: wave2 0.6s infinite alternate ease-in-out; }
+    .playing .audio-bar:nth-child(3n) { animation: wave3 0.85s infinite alternate ease-in-out; }
+
+    @keyframes wave1 { 0% { height: 4px; } 100% { height: 22px; } }
+    @keyframes wave2 { 0% { height: 6px; } 100% { height: 28px; } }
+    @keyframes wave3 { 0% { height: 3px; } 100% { height: 18px; } }
+  </style>
+</head>
+
+<body class="h-screen w-screen overflow-hidden flex flex-col font-sans antialiased text-sm select-none">
+
+  <!-- TOP APP BAR -->
+  <header class="h-14 border-b border-surface-border bg-surface/90 backdrop-blur-md px-5 flex items-center justify-between shrink-0 z-30">
+    
+    <!-- Left: Brand + Status -->
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-6 h-6 rounded-md bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+          <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-indigo-400"></i>
+        </div>
+        <span class="font-semibold text-zinc-100 tracking-tight text-sm">HandoffProof</span>
+      </div>
+
+      <div class="h-3.5 w-[1px] bg-white/[0.08]"></div>
+
+      <!-- Retell Engine Active Badge -->
+      <div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/[0.06] border border-emerald-500/20 text-[11px] text-emerald-400 font-mono">
+        <span class="relative flex h-1.5 w-1.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
+        </span>
+        <span>Retell Engine Active</span>
+      </div>
+
+      <!-- SLA Alert Pill -->
+      <div id="top-sla-banner" class="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full bg-rose-500/[0.08] border border-rose-500/20 text-[11px] text-rose-300">
+        <i data-lucide="alert-circle" class="w-3 h-3 text-rose-400 shrink-0"></i>
+        <span>Street Services · <strong class="font-medium text-rose-200">1 Unassigned Escalation</strong></span>
+      </div>
+    </div>
+
+    <!-- Center/Right: Quick Search & Operator Badge -->
+    <div class="flex items-center gap-3">
+      <!-- ⌘K Search Pill -->
+      <div class="relative hidden sm:block w-64">
+        <div class="flex items-center justify-between w-full px-2.5 py-1 rounded-lg bg-surface-card border border-surface-border text-xs text-zinc-400">
+          <div class="flex items-center gap-2">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-500"></i>
+            <input type="text" id="global-search" oninput="filterTicketCards(this.value)" placeholder="Search tickets (⌘K)..." class="bg-transparent border-none outline-none text-zinc-200 placeholder-zinc-500 text-xs w-36">
+          </div>
+          <kbd class="text-[10px] font-mono text-zinc-500 bg-zinc-800/80 px-1.5 py-0.5 rounded border border-zinc-700/50">⌘K</kbd>
+        </div>
+      </div>
+
+      <!-- Demo Trigger Action -->
+      <button onclick="triggerSimulatedCallback()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-card hover:bg-surface-elevated text-zinc-300 hover:text-white border border-surface-border text-xs transition active:scale-95">
+        <i data-lucide="phone-outgoing" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span>Simulate Retell Call</span>
+      </button>
+
+      <!-- Profile -->
+      <div class="flex items-center gap-2 pl-2 border-l border-surface-border">
+        <div class="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] font-mono font-medium text-zinc-300">
+          LA
+        </div>
+        <span class="hidden lg:inline text-xs text-zinc-400">Desk #04</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MASTER-DETAIL VIEWPORT (Fixed Full Height, Zero Double Scroll) -->
+  <div class="flex-1 grid grid-cols-12 overflow-hidden bg-surface">
+    
+    <!-- ==================== LEFT COLUMN: TRIAGE TICKET LIST ==================== -->
+    <aside class="col-span-12 md:col-span-5 lg:col-span-4 border-r border-surface-border flex flex-col h-full bg-surface-panel overflow-hidden">
+      
+      <!-- Filter Tabs Bar -->
+      <div class="px-3 pt-3 pb-2 border-b border-surface-border shrink-0">
+        <div class="flex items-center gap-1 overflow-x-auto no-scrollbar" id="status-filters">
+          <button onclick="applyFilter('all')" data-filter="all" class="filter-tab px-2.5 py-1 rounded-md text-xs font-medium bg-white/[0.08] text-white transition">
+            All <span id="count-all" class="text-zinc-400 text-[10px] ml-1 font-mono">4</span>
+          </button>
+          <button onclick="applyFilter('escalated')" data-filter="escalated" class="filter-tab px-2.5 py-1 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-200 transition">
+            Escalated <span id="count-escalated" class="text-rose-400 text-[10px] ml-1 font-mono">1</span>
+          </button>
+          <button onclick="applyFilter('retell')" data-filter="retell" class="filter-tab px-2.5 py-1 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-200 transition">
+            Retell Queue <span id="count-retell" class="text-amber-400 text-[10px] ml-1 font-mono">1</span>
+          </button>
+          <button onclick="applyFilter('claimed')" data-filter="claimed" class="filter-tab px-2.5 py-1 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-200 transition">
+            Accepted <span id="count-accepted" class="text-emerald-400 text-[10px] ml-1 font-mono">2</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Scannable Ticket List -->
+      <div class="flex-1 overflow-y-auto divide-y divide-surface-border/50" id="ticket-list">
+        
+        <!-- Ticket 1 (Active by default, Critical Escalated) -->
+        <div onclick="selectTicket(1)" id="ticket-row-1" data-status="escalated" class="ticket-row p-3.5 cursor-pointer bg-surface-card border-l-2 border-rose-500 transition-all hover:bg-surface-elevated/70">
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+              <span class="text-[11px] font-mono text-zinc-400">#HP-9402</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-medium">Street Services</span>
+            </div>
+            <!-- Score Pill -->
+            <span class="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20" id="badge-score-1">
+              100
+            </span>
+          </div>
+          
+          <h4 class="text-xs font-semibold text-zinc-100 truncate mb-1.5 tracking-tight">
+            Flooding — N Figueroa St & Ave 52
+          </h4>
+
+          <div class="flex items-center justify-between text-[11px]">
+            <span id="pill-status-1" class="text-rose-400 flex items-center gap-1 font-medium text-[11px]">
+              <i data-lucide="alert-octagon" class="w-3 h-3 text-rose-500"></i>
+              Unclaimed (Supervisor Alert)
+            </span>
+            <span class="text-zinc-500 font-mono text-[10px]">2m ago</span>
+          </div>
+        </div>
+
+        <!-- Ticket 2 (Retell Countdown Loop Active) -->
+        <div onclick="selectTicket(2)" id="ticket-row-2" data-status="retell" class="ticket-row p-3.5 cursor-pointer border-l-2 border-transparent transition-all hover:bg-surface-elevated/70">
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              <span class="text-[11px] font-mono text-zinc-400">#HP-9398</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-medium">Urban Forestry</span>
+            </div>
+            <!-- Score Pill -->
+            <span class="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20" id="badge-score-2">
+              45
+            </span>
+          </div>
+          
+          <h4 class="text-xs font-semibold text-zinc-200 truncate mb-1.5 tracking-tight">
+            Downed Tree — N Figueroa St & Ave 57
+          </h4>
+
+          <div class="flex items-center justify-between text-[11px]">
+            <span id="pill-status-2" class="text-amber-400 font-mono text-[11px] flex items-center gap-1">
+              <i data-lucide="clock" class="w-3 h-3 text-amber-400"></i>
+              Retell Call in <span id="list-countdown-2">00:34</span>
+            </span>
+            <span class="text-zinc-500 font-mono text-[10px]">8m ago</span>
+          </div>
+        </div>
+
+        <!-- Ticket 3 (Accepted & Owned) -->
+        <div onclick="selectTicket(3)" id="ticket-row-3" data-status="claimed" class="ticket-row p-3.5 cursor-pointer border-l-2 border-transparent transition-all hover:bg-surface-elevated/70 opacity-75 hover:opacity-100">
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span class="text-[11px] font-mono text-zinc-400">#HP-9371</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-medium">Street Services</span>
+            </div>
+            <span class="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
+              15
+            </span>
+          </div>
+          
+          <h4 class="text-xs font-medium text-zinc-300 truncate mb-1.5 tracking-tight">
+            Pothole Hazard — N Figueroa St & Ave 50
+          </h4>
+
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-zinc-400 flex items-center gap-1 text-[11px]">
+              <i data-lucide="check" class="w-3 h-3 text-emerald-400"></i>
+              Owned by M. Lee (Crew #4)
+            </span>
+            <span class="text-zinc-500 font-mono text-[10px]">22m ago</span>
+          </div>
+        </div>
+
+        <!-- Ticket 4 (Accepted & Dispatched) -->
+        <div onclick="selectTicket(4)" id="ticket-row-4" data-status="claimed" class="ticket-row p-3.5 cursor-pointer border-l-2 border-transparent transition-all hover:bg-surface-elevated/70 opacity-75 hover:opacity-100">
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span class="text-[11px] font-mono text-zinc-400">#HP-9360</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-medium">DWP Water</span>
+            </div>
+            <span class="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
+              80
+            </span>
+          </div>
+          
+          <h4 class="text-xs font-medium text-zinc-300 truncate mb-1.5 tracking-tight">
+            Broken Water Main — Pasadena Ave & Ave 43
+          </h4>
+
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-zinc-400 flex items-center gap-1 text-[11px]">
+              <i data-lucide="check" class="w-3 h-3 text-emerald-400"></i>
+              Owned by C. Vance (DWP Crew)
+            </span>
+            <span class="text-zinc-500 font-mono text-[10px]">41m ago</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer Info -->
+      <div class="p-3 border-t border-surface-border text-[11px] text-zinc-500 flex items-center justify-between shrink-0 font-mono">
+        <span>Doctrine: Unaccepted = Escalated</span>
+        <span>SLA Cap: 10m</span>
+      </div>
+    </aside>
+
+    <!-- ==================== RIGHT COLUMN: FOCUSED INCIDENT INSPECTOR ==================== -->
+    <main class="col-span-12 md:col-span-7 lg:col-span-8 flex flex-col h-full bg-surface overflow-y-auto">
+      
+      <!-- Top Inspector Bar: Claim Action Header -->
+      <div class="p-5 border-b border-surface-border bg-surface-panel/40 shrink-0">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          
+          <!-- Title & Badges -->
+          <div>
+            <div class="flex items-center gap-2 mb-1.5">
+              <span id="inspect-dept-badge" class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-zinc-800 text-zinc-300 border border-zinc-700/60">
+                Street Services
+              </span>
+              <span id="inspect-id" class="text-xs font-mono text-zinc-400">#HP-9402</span>
+              <span class="text-zinc-600">•</span>
+              <span id="inspect-timestamp" class="text-xs text-zinc-400">Placed 18m ago</span>
+            </div>
+            
+            <h1 id="inspect-title" class="text-lg font-bold text-white tracking-tight">
+              Flooding — N Figueroa St & Ave 52
+            </h1>
+          </div>
+
+          <!-- The High Priority "Accept Responsibility" Button -->
+          <div class="flex items-center gap-3">
+            <button id="btn-claim-action" onclick="claimSelectedTicket()" class="w-full sm:w-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/50 active:scale-95 ring-1 ring-white/10">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+              <span id="claim-btn-text">Accept Responsibility (Claim Ticket)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Accountability Status Callout -->
+        <div id="ownership-callout" class="mt-4 p-3 rounded-lg bg-rose-500/[0.06] border border-rose-500/20 text-xs flex items-center justify-between">
+          <div class="flex items-center gap-2 text-rose-300">
+            <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400 shrink-0"></i>
+            <span id="ownership-callout-text">Assigned to <strong class="text-white">J. Ramirez</strong> — Unaccepted for 18m. Retell AI escalated incident to Supervisor.</span>
+          </div>
+          <span id="ownership-callout-status" class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-500/20 text-rose-300 uppercase">
+            Supervisor Level
+          </span>
+        </div>
+      </div>
+
+      <!-- Inspector Body -->
+      <div class="p-6 space-y-6">
+        
+        <!-- SECTION 1: RETELL VOICE AI CALLBACK CARD -->
+        <div class="rounded-xl bg-surface-card border border-surface-border p-4 space-y-3.5">
+          
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <i data-lucide="bot" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="text-xs font-semibold text-zinc-100">Retell Autonomous Voice Agent</h3>
+                <p class="text-[11px] text-zinc-400 font-mono">Outbound Check-In Log • (323) 555-0182</p>
+              </div>
+            </div>
+
+            <!-- Agent State Badge -->
+            <span id="retell-state-pill" class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-rose-500/10 text-rose-300 border border-rose-500/20 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
+              Citizen Escalated Condition
+            </span>
+          </div>
+
+          <!-- Citizen Statement -->
+          <div class="p-3 rounded-lg bg-surface-panel border border-surface-border/60">
+            <div class="text-[11px] text-zinc-400 uppercase tracking-wider font-mono mb-1">Citizen Feedback Summary:</div>
+            <p id="inspect-retell-quote" class="text-xs text-zinc-200 italic font-sans leading-relaxed">
+              "Water entered living room, rising fast, elderly mother trapped inside. No one has arrived yet."
+            </p>
+          </div>
+
+          <!-- Waveform Player & Controls -->
+          <div class="p-2.5 rounded-lg bg-surface-panel border border-surface-border flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <button onclick="toggleAudioPreview()" id="audio-play-btn" class="w-7 h-7 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition">
+                <i data-lucide="play" class="w-3.5 h-3.5 ml-0.5" id="audio-play-icon"></i>
+              </button>
+              
+              <div class="text-[11px]">
+                <div class="text-zinc-200 font-medium">Recording: Call #RT-8902</div>
+                <div class="text-zinc-500 text-[10px] font-mono">Duration: 1m 14s • Sentiment: <span class="text-rose-400">-0.84</span></div>
+              </div>
+            </div>
+
+            <!-- Waveform Canvas Mock -->
+            <div class="flex items-center h-6 px-2" id="waveform-container">
+              <span class="audio-bar" style="height: 8px;"></span>
+              <span class="audio-bar" style="height: 14px;"></span>
+              <span class="audio-bar" style="height: 20px;"></span>
+              <span class="audio-bar" style="height: 10px;"></span>
+              <span class="audio-bar" style="height: 24px;"></span>
+              <span class="audio-bar" style="height: 18px;"></span>
+              <span class="audio-bar" style="height: 12px;"></span>
+              <span class="audio-bar" style="height: 22px;"></span>
+              <span class="audio-bar" style="height: 16px;"></span>
+              <span class="audio-bar" style="height: 9px;"></span>
+            </div>
+
+            <!-- Modal Trigger Button -->
+            <button onclick="openTranscriptModal()" class="px-2.5 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-medium transition flex items-center gap-1.5 shrink-0">
+              <i data-lucide="file-text" class="w-3 h-3 text-indigo-400"></i>
+              <span>View Transcript</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SECTION 2: HANDOFF CHAIN & PROOF OF OWNERSHIP TIMELINE -->
+        <div class="rounded-xl bg-surface-card border border-surface-border p-4 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-semibold text-zinc-100 flex items-center gap-2">
+              <i data-lucide="git-commit" class="w-3.5 h-3.5 text-zinc-400"></i>
+              <span>Handoff Proof & Chain of Custody</span>
+            </h3>
+            <span class="text-[10px] font-mono text-zinc-500">Immutable Audit Trail</span>
+          </div>
+
+          <!-- Vertical 4-Step Timeline -->
+          <div class="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-[1px] before:bg-white/[0.08]" id="timeline-steps">
+            
+            <!-- Step 1 -->
+            <div class="relative">
+              <div class="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center">
+                <i data-lucide="check" class="w-2.5 h-2.5 text-emerald-400"></i>
+              </div>
+              <div class="text-xs font-medium text-zinc-200">1. Non-Emergency Distress Call Logged</div>
+              <p class="text-[11px] text-zinc-400 mt-0.5">Reported by Marcus Vance via 311 intake. Priority initial assessment: Level 1.</p>
+              <span class="text-[10px] font-mono text-zinc-500">15:40:12 PDT</span>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="relative">
+              <div class="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center">
+                <i data-lucide="check" class="w-2.5 h-2.5 text-emerald-400"></i>
+              </div>
+              <div class="text-xs font-medium text-zinc-200">2. Dispatched to Street Services Queue</div>
+              <p class="text-[11px] text-zinc-400 mt-0.5">Assigned to J. Ramirez (On-call Dispatcher). 10-minute acceptance SLA clock activated.</p>
+              <span class="text-[10px] font-mono text-zinc-500">15:40:45 PDT</span>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="relative" id="step-3-retell">
+              <div class="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-rose-500/20 border border-rose-500 flex items-center justify-center">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
+              </div>
+              <div class="text-xs font-medium text-rose-300">3. Retell Autonomous Callback: Worsening Condition</div>
+              <p class="text-[11px] text-zinc-400 mt-0.5">No operator accepted within SLA. Retell voice agent placed outbound call to citizen. Water breach confirmed. Ticket escalated Level 1 &rarr; Level 3.</p>
+              <span class="text-[10px] font-mono text-zinc-500">15:56:40 PDT</span>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="relative" id="step-4-claim">
+              <div class="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center" id="step-4-icon-container">
+                <span class="w-1.5 h-1.5 rounded-full bg-zinc-500" id="step-4-dot"></span>
+              </div>
+              <div class="text-xs font-medium text-zinc-400" id="step-4-title">4. Personal Human Responsibility Claim</div>
+              <p class="text-[11px] text-zinc-500 mt-0.5" id="step-4-desc">Pending explicit ownership acceptance. Ticket cannot be quietly passed between departments.</p>
+              <span class="text-[10px] font-mono text-zinc-500" id="step-4-time">Awaiting Operator Signature</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- SECTION 3: INCIDENT METADATA & CALLER INFO -->
+        <div class="rounded-xl bg-surface-card border border-surface-border p-4">
+          <h3 class="text-xs font-semibold text-zinc-100 mb-3 flex items-center gap-2">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-zinc-400"></i>
+            <span>Incident Metadata & Citizen Record</span>
+          </h3>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <div>
+              <span class="text-[10px] font-mono uppercase text-zinc-500 block mb-0.5">Primary Caller</span>
+              <span class="text-zinc-200 font-medium" id="meta-caller">Marcus Vance</span>
+            </div>
+            <div>
+              <span class="text-[10px] font-mono uppercase text-zinc-500 block mb-0.5">Contact Number</span>
+              <span class="text-zinc-200 font-mono" id="meta-phone">(323) 555-0182</span>
+            </div>
+            <div>
+              <span class="text-[10px] font-mono uppercase text-zinc-500 block mb-0.5">Department Head</span>
+              <span class="text-zinc-200" id="meta-dept-head">D. Castillo (Field Dir)</span>
+            </div>
+            <div>
+              <span class="text-[10px] font-mono uppercase text-zinc-500 block mb-0.5">SLA State</span>
+              <span class="text-rose-400 font-medium" id="meta-sla-state">Breached (+8m)</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- RETELL CALL TRANSCRIPT MODAL / DRAWER -->
+  <div id="transcript-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-surface-panel border border-surface-borderStrong rounded-2xl max-w-xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="px-5 py-3.5 border-b border-surface-border flex items-center justify-between bg-surface-card">
+        <div class="flex items-center gap-2.5">
+          <div class="w-6 h-6 rounded-md bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+            <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-zinc-100 text-xs">Retell Voice Transcript: #HP-9402</h3>
+            <p class="text-[10px] font-mono text-zinc-400">Caller: Marcus Vance • Duration 1m 14s</p>
+          </div>
+        </div>
+        <button onclick="closeTranscriptModal()" class="text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Transcript Exchanges -->
+      <div class="p-5 overflow-y-auto space-y-3.5 text-xs">
+        
+        <!-- Score Bar -->
+        <div class="p-2.5 rounded-lg bg-surface-card border border-surface-border flex items-center justify-between text-[11px] font-mono">
+          <span class="text-zinc-400">Sentiment: <span class="text-rose-400 font-semibold">-0.84 (High Distress)</span></span>
+          <span class="text-zinc-400">Escalation Triggered: <span class="text-indigo-400 font-semibold">Yes (Level 3)</span></span>
+        </div>
+
+        <!-- Exchange 1 -->
+        <div class="space-y-1">
+          <div class="flex items-center gap-2 text-[10px] font-mono text-indigo-400">
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+            <span>Retell Voice Agent (15:56:45)</span>
+          </div>
+          <div class="bg-surface-card p-3 rounded-lg border border-surface-border text-zinc-200 leading-relaxed">
+            "Hello Marcus, this is the City non-emergency follow-up system. Our Street Services field dispatch has not yet confirmed arrival for your flooding report at N Figueroa & 52nd. Is the condition stable, improving, or getting worse?"
+          </div>
+        </div>
+
+        <!-- Exchange 2 -->
+        <div class="space-y-1">
+          <div class="flex items-center gap-2 text-[10px] font-mono text-amber-400 justify-end">
+            <span>Marcus Vance (15:57:02)</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+          </div>
+          <div class="bg-indigo-950/20 p-3 rounded-lg border border-indigo-500/20 text-zinc-100 leading-relaxed text-right">
+            "It's getting much worse! The storm drain on the corner is completely blocked and water is gushing right over the curb into our walkway. My mother is 82 and we are worried it’s going to come into the living room!"
+          </div>
+        </div>
+
+        <!-- Exchange 3 -->
+        <div class="space-y-1">
+          <div class="flex items-center gap-2 text-[10px] font-mono text-indigo-400">
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+            <span>Retell Voice Agent (15:57:25)</span>
+          </div>
+          <div class="bg-surface-card p-3 rounded-lg border border-surface-border text-zinc-200 leading-relaxed">
+            "I understand the urgency. Because the situation has deteriorated and no field unit has claimed responsibility, I have immediately escalated this ticket to the Shift Supervisor desk. Please remain in a safe location."
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-5 py-3 border-t border-surface-border bg-surface-card flex items-center justify-between">
+        <button onclick="copyVerifiableAudit()" class="text-xs text-zinc-400 hover:text-white flex items-center gap-1.5 transition">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span>Copy Verifiable Log</span>
+        </button>
+        <button onclick="closeTranscriptModal()" class="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium transition">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- APPLICATION LOGIC & AUDIO SYNTHESIS -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // In-Memory Data State
+    const tickets = {
+      1: {
+        id: '#HP-9402',
+        title: 'Flooding — N Figueroa St & Ave 52',
+        dept: 'Street Services',
+        status: 'escalated',
+        score: 100,
+        assignedTo: 'J. Ramirez (Dispatcher)',
+        accepted: false,
+        timeAgo: '18m ago',
+        caller: 'Marcus Vance',
+        phone: '(323) 555-0182',
+        deptHead: 'D. Castillo (Field Dir)',
+        sla: 'Breached (+8m)',
+        retellState: 'Citizen Escalated Condition',
+        retellQuote: '"Water entered living room, rising fast, elderly mother trapped inside. No one has arrived yet."',
+        sentiment: '-0.84'
+      },
+      2: {
+        id: '#HP-9398',
+        title: 'Downed Tree — N Figueroa St & Ave 57',
+        dept: 'Urban Forestry',
+        status: 'retell',
+        score: 45,
+        assignedTo: 'T. Nguyen (Receipt Only)',
+        accepted: false,
+        timeAgo: '8m ago',
+        caller: 'Elena Rostova',
+        phone: '(323) 555-0149',
+        deptHead: 'M. Sterling (Urban Forestry)',
+        sla: 'Within SLA (2m left)',
+        retellState: 'Autonomous Countdown Active',
+        retellQuote: 'Pending check: Agent will dial resident at 10m mark if ticket remains unclaimed.',
+        sentiment: '0.00'
+      },
+      3: {
+        id: '#HP-9371',
+        title: 'Pothole Hazard — N Figueroa St & Ave 50',
+        dept: 'Street Services',
+        status: 'claimed',
+        score: 15,
+        assignedTo: 'M. Lee (Crew #4)',
+        accepted: true,
+        timeAgo: '22m ago',
+        caller: 'Samir Patel',
+        phone: '(213) 555-0811',
+        deptHead: 'D. Castillo (Field Dir)',
+        sla: 'Resolved SLA',
+        retellState: 'Callback Suppressed',
+        retellQuote: 'Field owner verified on-scene. Autonomous callback suspended.',
+        sentiment: '+0.40'
+      },
+      4: {
+        id: '#HP-9360',
+        title: 'Broken Water Main — Pasadena Ave & Ave 43',
+        dept: 'DWP Water',
+        status: 'claimed',
+        score: 80,
+        assignedTo: 'C. Vance (DWP Crew)',
+        accepted: true,
+        timeAgo: '41m ago',
+        caller: 'Gloria Mendez',
+        phone: '(323) 555-0922',
+        deptHead: 'R. Kincaid (Water Operations)',
+        sla: 'Resolved SLA',
+        retellState: 'Crew Dispatched',
+        retellQuote: 'Valves secured. Operator holds ongoing repair ticket responsibility.',
+        sentiment: '+0.10'
+      }
+    };
+
+    let selectedTicketId = 1;
+    let isPlayingAudio = false;
+    let countdownSecs = 34;
+
+    // Web Audio API Synthesizer (Sleek Modern Sound FX)
+    function playTone(type) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        const t = ctx.currentTime;
+
+        if (type === 'claim') {
+          // Linear / Apple style pleasant claim chord
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, t); // D5
+          osc.frequency.exponentialRampToValueAtTime(880, t + 0.12); // A5
+          gain.gain.setValueAtTime(0.12, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+          osc.start(t);
+          osc.stop(t + 0.35);
+        } else if (type === 'escalate') {
+          // Warning chirp
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(440, t);
+          osc.frequency.setValueAtTime(660, t + 0.08);
+          gain.gain.setValueAtTime(0.15, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+          osc.start(t);
+          osc.stop(t + 0.3);
+        } else if (type === 'voice') {
+          // Radio blip
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(320, t);
+          gain.gain.setValueAtTime(0.05, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+          osc.start(t);
+          osc.stop(t + 0.15);
+        }
+      } catch (e) {
+        console.warn('AudioContext requires interaction');
+      }
+    }
+
+    // SLA Countdown Interval for Ticket 2
+    setInterval(() => {
+      if (countdownSecs > 0 && !tickets[2].accepted) {
+        countdownSecs--;
+        const el = document.getElementById('list-countdown-2');
+        if (el) el.innerText = `00:${String(countdownSecs).padStart(2, '0')}`;
+      }
+    }, 1000);
+
+    // Select Ticket in Master-Detail
+    function selectTicket(id) {
+      selectedTicketId = id;
+      const t = tickets[id];
+
+      // Update row highlights
+      document.querySelectorAll('.ticket-row').forEach(row => {
+        row.classList.remove('bg-surface-card', 'border-rose-500', 'border-indigo-500', 'border-emerald-500');
+        row.classList.add('border-transparent');
+      });
+
+      const activeRow = document.getElementById(`ticket-row-${id}`);
+      if (activeRow) {
+        activeRow.classList.add('bg-surface-card');
+        if (t.accepted) {
+          activeRow.classList.add('border-emerald-500');
+        } else if (t.status === 'escalated') {
+          activeRow.classList.add('border-rose-500');
+        } else {
+          activeRow.classList.add('border-amber-400');
+        }
+      }
+
+      // Populate Inspector
+      document.getElementById('inspect-dept-badge').innerText = t.dept;
+      document.getElementById('inspect-id').innerText = t.id;
+      document.getElementById('inspect-timestamp').innerText = `Placed ${t.timeAgo}`;
+      document.getElementById('inspect-title').innerText = t.title;
+
+      document.getElementById('inspect-retell-quote').innerText = t.retellQuote;
+      document.getElementById('meta-caller').innerText = t.caller;
+      document.getElementById('meta-phone').innerText = t.phone;
+      document.getElementById('meta-deptHead').innerText = t.deptHead;
+      document.getElementById('meta-sla-state').innerText = t.sla;
+
+      renderClaimButtonState(t);
+      renderRetellState(t);
+      renderTimeline(t);
+      lucide.createIcons();
+    }
+
+    function renderClaimButtonState(t) {
+      const btn = document.getElementById('btn-claim-action');
+      const text = document.getElementById('claim-btn-text');
+      const callout = document.getElementById('ownership-callout');
+      const calloutText = document.getElementById('ownership-callout-text');
+      const calloutStatus = document.getElementById('ownership-callout-status');
+
+      if (t.accepted) {
+        btn.className = "w-full sm:w-auto px-4 py-2 rounded-lg bg-surface-card border border-emerald-500/30 text-emerald-400 font-medium text-xs flex items-center justify-center gap-2 cursor-default";
+        text.innerText = "Responsibility Locked (Owned by You)";
+        btn.onclick = null;
+
+        callout.className = "mt-4 p-3 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/20 text-xs flex items-center justify-between";
+        calloutText.innerHTML = `<span class="text-emerald-300 font-medium">Chain of Custody Active:</span> <span class="text-zinc-300">You hold personal legal responsibility for this incident.</span>`;
+        calloutStatus.className = "px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/20 text-emerald-300 uppercase";
+        calloutStatus.innerText = "Secured";
+      } else {
+        btn.className = "w-full sm:w-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/50 active:scale-95 ring-1 ring-white/10";
+        text.innerText = "Accept Responsibility (Claim Ticket)";
+        btn.onclick = claimSelectedTicket;
+
+        if (t.status === 'escalated') {
+          callout.className = "mt-4 p-3 rounded-lg bg-rose-500/[0.06] border border-rose-500/20 text-xs flex items-center justify-between";
+          calloutText.innerHTML = `Assigned to <strong class="text-white">${t.assignedTo}</strong> — Unaccepted. Escalated to Supervisor.`;
+          calloutStatus.className = "px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-500/20 text-rose-300 uppercase";
+          calloutStatus.innerText = "Supervisor Level";
+        } else {
+          callout.className = "mt-4 p-3 rounded-lg bg-amber-500/[0.06] border border-amber-500/20 text-xs flex items-center justify-between";
+          calloutText.innerHTML = `Unaccepted in queue. Retell Voice callback active in <span class="font-mono text-amber-300">${countdownSecs}s</span>.`;
+          calloutStatus.className = "px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-500/20 text-amber-300 uppercase";
+          calloutStatus.innerText = "SLA Countdown";
+        }
+      }
+    }
+
+    function renderRetellState(t) {
+      const pill = document.getElementById('retell-state-pill');
+      if (t.status === 'escalated') {
+        pill.className = "px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-rose-500/10 text-rose-300 border border-rose-500/20 flex items-center gap-1.5";
+        pill.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span> Citizen Escalated Condition`;
+      } else if (t.status === 'retell') {
+        pill.className = "px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1.5";
+        pill.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Retell Callback Queued`;
+      } else {
+        pill.className = "px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-zinc-800 text-zinc-400 border border-zinc-700/50 flex items-center gap-1.5";
+        pill.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i> Callback Suppressed`;
+      }
+    }
+
+    function renderTimeline(t) {
+      const dot = document.getElementById('step-4-dot');
+      const container = document.getElementById('step-4-icon-container');
+      const title = document.getElementById('step-4-title');
+      const desc = document.getElementById('step-4-desc');
+      const time = document.getElementById('step-4-time');
+
+      if (t.accepted) {
+        container.className = "absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center";
+        container.innerHTML = `<i data-lucide="check" class="w-2.5 h-2.5 text-emerald-400"></i>`;
+        title.className = "text-xs font-medium text-emerald-300";
+        title.innerText = "4. Human Responsibility Confirmed (Operator You)";
+        desc.className = "text-[11px] text-zinc-400 mt-0.5";
+        desc.innerText = "Ownership claimed. Autonomous voice callbacks ceased; human custodian logged.";
+        time.className = "text-[10px] font-mono text-emerald-400";
+        time.innerText = "Locked at 16:02:14 PDT";
+      } else {
+        container.className = "absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center";
+        container.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>`;
+        title.className = "text-xs font-medium text-zinc-400";
+        title.innerText = "4. Personal Human Responsibility Claim";
+        desc.className = "text-[11px] text-zinc-500 mt-0.5";
+        desc.innerText = "Pending explicit ownership acceptance. Ticket cannot be quietly passed between departments.";
+        time.className = "text-[10px] font-mono text-zinc-500";
+        time.innerText = "Awaiting Operator Signature";
+      }
+    }
+
+    // Claim Responsibility Action
+    function claimSelectedTicket() {
+      const t = tickets[selectedTicketId];
+      if (!t || t.accepted) return;
+
+      playTone('claim');
+      t.accepted = true;
+      t.status = 'claimed';
+      t.sla = 'Resolved SLA';
+
+      // Update Row
+      const rowPill = document.getElementById(`pill-status-${selectedTicketId}`);
+      if (rowPill) {
+        rowPill.className = "text-emerald-400 flex items-center gap-1 font-medium text-[11px]";
+        rowPill.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i> Owned by You`;
+      }
+
+      // Update Counts
+      updateFilterCounts();
+      renderClaimButtonState(t);
+      renderTimeline(t);
+      renderRetellState(t);
+
+      // Hide SLA banner if no unassigned left
+      if (selectedTicketId === 1) {
+        document.getElementById('top-sla-banner').classList.add('hidden');
+      }
+
+      showToast(`Ownership Locked! You are now legally accountable for ${t.id}.`, 'success');
+      lucide.createIcons();
+    }
+
+    // Trigger Simulated Retell Call (Demo Feature)
+    function triggerSimulatedCallback() {
+      playTone('escalate');
+      
+      const t = tickets[2];
+      t.score = 95;
+      t.status = 'escalated';
+      t.retellQuote = '"Tree branch snapped against electric line, sparks falling onto car roof!"';
+      t.retellState = 'Citizen Escalated Condition';
+
+      // Update Row 2 UI
+      document.getElementById('badge-score-2').innerText = '95';
+      document.getElementById('badge-score-2').className = 'text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20';
+      
+      const pill = document.getElementById('pill-status-2');
+      pill.className = "text-rose-400 flex items-center gap-1 font-medium text-[11px]";
+      pill.innerHTML = `<i data-lucide="alert-octagon" class="w-3 h-3 text-rose-500"></i> Worsening: Sparks Reported`;
+
+      updateFilterCounts();
+
+      // If Ticket 2 is selected, refresh view
+      if (selectedTicketId === 2) {
+        selectTicket(2);
+      }
+
+      showToast(`⚡ Retell Voice Agent: Citizen at Ave 57 reported sparks! Ticket bumped to Level 3.`, 'error');
+      lucide.createIcons();
+    }
+
+    // Waveform audio simulation
+    function toggleAudioPreview() {
+      const container = document.getElementById('waveform-container');
+      const icon = document.getElementById('audio-play-icon');
+      
+      isPlayingAudio = !isPlayingAudio;
+      if (isPlayingAudio) {
+        playTone('voice');
+        container.classList.add('playing');
+        icon.setAttribute('data-lucide', 'square');
+        lucide.createIcons();
+        showToast('Playing Retell AI encrypted voice recording #RT-8902...', 'info');
+      } else {
+        container.classList.remove('playing');
+        icon.setAttribute('data-lucide', 'play');
+        lucide.createIcons();
+      }
+    }
+
+    // Transcript Modal
+    function openTranscriptModal() {
+      const modal = document.getElementById('transcript-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function closeTranscriptModal() {
+      const modal = document.getElementById('transcript-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function copyVerifiableAudit() {
+      const audit = `HandoffProof Audit Transcript [Ticket #HP-9402]
+Caller: Marcus Vance | Time: 15:56:45 PDT
+Retell Voice AI: "Has Street Services arrived? Is the flooding stable or getting worse?"
+Citizen: "Much worse! Storm drain blocked, water entering walkway."
+System Action: Escalated to Supervisor desk. Operator accountability enforced.`;
+      
+      const el = document.createElement('textarea');
+      el.value = audit;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+
+      showToast('Transcript copied to clipboard with SHA-256 seal.', 'info');
+    }
+
+    // Filter Logic
+    function applyFilter(filter) {
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        if (tab.dataset.filter === filter) {
+          tab.className = "filter-tab px-2.5 py-1 rounded-md text-xs font-medium bg-white/[0.08] text-white transition";
+        } else {
+          tab.className = "filter-tab px-2.5 py-1 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-200 transition";
+        }
+      });
+
+      document.querySelectorAll('.ticket-row').forEach(row => {
+        const status = row.dataset.status;
+        if (filter === 'all' || status === filter) {
+          row.style.display = 'block';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    function updateFilterCounts() {
+      let escalated = 0;
+      let retell = 0;
+      let accepted = 0;
+
+      Object.values(tickets).forEach(t => {
+        if (t.accepted) accepted++;
+        else if (t.status === 'escalated') escalated++;
+        else if (t.status === 'retell') retell++;
+      });
+
+      document.getElementById('count-escalated').innerText = escalated;
+      document.getElementById('count-retell').innerText = retell;
+      document.getElementById('count-accepted').innerText = accepted;
+    }
+
+    function filterTicketCards(query) {
+      const q = query.toLowerCase();
+      document.querySelectorAll('.ticket-row').forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(q) ? 'block' : 'none';
+      });
+    }
+
+    // Minimal Toast
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      let border = 'border-surface-border bg-surface-card text-zinc-200';
+      let icon = 'info';
+
+      if (type === 'success') {
+        border = 'border-emerald-500/30 bg-surface-panel text-emerald-300';
+        icon = 'check-circle';
+      } else if (type === 'error') {
+        border = 'border-rose-500/30 bg-surface-panel text-rose-300';
+        icon = 'alert-octagon';
+      }
+
+      toast.className = `p-3 rounded-lg border ${border} shadow-2xl flex items-center gap-2.5 text-xs max-w-sm pointer-events-auto transition-all transform duration-200 translate-y-2 opacity-0`;
+      toast.innerHTML = `
+        <i data-lucide="${icon}" class="w-3.5 h-3.5 shrink-0"></i>
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 250);
+      }, 3500);
+    }
+
+    // Keyboard shortcut for ⌘K
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('global-search').focus();
+      }
+    });
+
+    // Initial setup
+    selectTicket(1);
+    updateFilterCounts();
+  </script>
+</body>
+</html>
