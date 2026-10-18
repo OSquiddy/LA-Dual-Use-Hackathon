@@ -26,8 +26,10 @@ async def ladder_loop() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.config import DB_PATH
+
     init_db()
-    log.info("HandoffProof up | CALL_MODE=%s | TIMING_PROFILE=%s", CALL_MODE, TIMING_PROFILE)
+    log.info("HandoffProof up | CALL_MODE=%s | TIMING_PROFILE=%s | DB_PATH=%s", CALL_MODE, TIMING_PROFILE, DB_PATH)
     task = asyncio.create_task(ladder_loop()) if LADDER_ENABLED else None
     yield
     if task:
