@@ -1,10 +1,23 @@
-"""Additive callback schema upgrade. Unknown legacy schemas are left for explicit review."""
+"""Additive schema upgrades. Unknown legacy schemas are left for explicit review."""
 from sqlalchemy import inspect
+
+
+def upgrade_assignment_profiles(engine) -> None:
+    """Add an optional snapshot; existing assignment fields are never backfilled or rewritten."""
+    with engine.begin() as connection:
+        inspector = inspect(connection)
+        if 'assignment' not in inspector.get_table_names():
+            return
+        columns = {column['name'] for column in inspector.get_columns('assignment')}
+        original = {'id', 'incident_id', 'department', 'owner', 'assigned_at', 'acknowledged_at', 'accepted_at', 'default_owner_at'}
+        if original <= columns and 'responsibility_profile' not in columns:
+            connection.exec_driver_sql('ALTER TABLE assignment ADD COLUMN responsibility_profile JSON')
 
 CALLBACK_COLUMNS = {
     "state": "VARCHAR NOT NULL DEFAULT 'unknown'", "scheduled_at": "DATETIME",
     "dispatch_started_at": "DATETIME", "result_due_at": "DATETIME", "request_key": "VARCHAR",
     "mode": "VARCHAR NOT NULL DEFAULT 'legacy'", "live_authorized": "BOOLEAN NOT NULL DEFAULT 0",
+    "automatic": "BOOLEAN NOT NULL DEFAULT 1",
     "error_code": "VARCHAR", "transcript": "VARCHAR NOT NULL DEFAULT ''",
     "result_recorded": "BOOLEAN NOT NULL DEFAULT 0",
 }

@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 
 from app.contracts import CallbackOutcome, ReportIn
 from app.db import engine
-from app.engine import ladder
+from app.engine import ladder, oncall
 from app.engine.ingest import ingest_report
 from app.models import Callback
 
@@ -119,13 +119,17 @@ def test_nudge_then_default_owner_is_not_acceptance(client, calls, clock):
     assert storm(client)["ladder_step"] == 2
     clock.tick()
     flood = storm(client)
-    assert flood["ladder_step"] == 3 and flood["owner"] == "J. Ramirez (on-call)"
+    assert flood["ladder_step"] == 3 and flood["owner"] == oncall.default_owner(flood["department"], "Highland Park", flood_id)
     assert flood["accepted"] is False
     assert any(d["kind"] == "no_owner" and "not accepted yet" in d["label"] for d in flood["debts"])
     assert incident(client, flood_id)["assignment"]["default_owner_at"] is not None
 
 
-def test_missing_on_call_contact_is_flagged_not_invented(client, calls, clock):
+def test_missing_on_call_contact_is_flagged_not_invented(client, calls, clock, monkeypatch):
+    from copy import deepcopy
+    configuration = deepcopy(oncall._configuration())
+    configuration['Street Services'].pop('*', None)
+    monkeypatch.setattr(oncall, '_configuration', lambda: configuration)
     report("nowhere-1", location_text=None, hazard_type="pothole")
     clock.tick(2)
     pothole = next(i for i in state(client)["incidents"] if i["hazard_type"] == "pothole")

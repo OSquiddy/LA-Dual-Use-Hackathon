@@ -50,7 +50,7 @@ def test_hazard_routing_and_configured_department_roster(client, calls, clock, h
     assert initial['owner'] is None and not initial['accepted'] and not initial['acknowledged']
     clock.tick(2)
     current = detail(client, i)
-    assert current['owner'] == oncall.default_owner(department, 'Highland Park')
+    assert current['owner'] == oncall.default_owner(department, 'Highland Park', i)
     assert current['assignment']['department'] == department
     assert current['assignment']['default_owner_at'] is not None
     assert not current['accepted'] and not current['acknowledged']
@@ -188,15 +188,18 @@ def test_department_metrics_count_incidents_not_assignment_history(client):
     assert not department['silent']
 
 
-def test_missing_area_roster_returns_no_invented_people(client):
+def test_explicit_citywide_roster_handles_unknown_area_without_guessing_location(client):
     rid = ingest_report(ReportIn(source='seed', call_id='unknown-area-owner', hazard_type='downed_tree', created_at=utcnow()))
     with Session(engine) as s:
         i = s.get(Report, rid).incident_id
     options = client.get(f'/api/incidents/{i}/assignment-options').json()
     assert options['recommended_department'] == 'Urban Forestry' and options['area'] is None
-    assert all(option['owners'] == [] for option in options['departments'])
-    assert reassign(client, i, owner=oncall.default_owner('Urban Forestry', 'Highland Park')).status_code == 422
-    assert detail(client, i)['owner'] is None
+    assert all(option['owners'] for option in options['departments'])
+    assert reassign(client, i, owner=oncall.default_owner('Urban Forestry', None, i)).status_code == 200
+    current = detail(client, i)
+    assert current['lat'] is None and current['lng'] is None
+    assert current['assignment']['roster_area'] == 'Citywide demo coverage'
+    assert not current['accepted']
 
 
 def test_closure_records_actor_and_time_once_and_blocks_reassignment(client):

@@ -6,7 +6,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from app import models  # noqa: F401  (registers the tables)
 from app.config import DB_PATH
-from app.migrations import upgrade_callbacks
+from app.migrations import upgrade_assignment_profiles, upgrade_callbacks
 
 log = logging.getLogger(__name__)
 
@@ -15,6 +15,7 @@ engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread"
 
 def init_db() -> None:
     upgrade_callbacks(engine)
+    upgrade_assignment_profiles(engine)
     if _schema_is_stale():
         raise RuntimeError("Database schema requires a coordinated migration; existing data was preserved")
     SQLModel.metadata.create_all(engine)

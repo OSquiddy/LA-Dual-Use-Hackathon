@@ -42,10 +42,12 @@ export default function EvidenceReview({ id }: { id: number }) {
               <pre className="transcript">{report.transcript || "No transcript recorded."}</pre>
             </div>
           ))}
-          {evidence.callbacks.filter((callback) => callback.summary).map((callback) => (
+          {evidence.callbacks.filter((callback) => callback.summary || callback.transcript).map((callback) => (
             <div className="report" key={callback.attempt_no}>
               <h4>Callback #{callback.attempt_no} · Source summary</h4>
               <pre className="transcript">{callback.summary}</pre>
+              <h4>Full callback transcript</h4>
+              <pre className="transcript">{callback.transcript || "No transcript recorded."}</pre>
             </div>
           ))}
         </>

@@ -102,7 +102,7 @@ def test_agent_identity_checked(public, client, agent, code):
     assert client.get('/api/state').json()['incidents'][0]['report_count'] == 3
 
 
-@pytest.mark.parametrize('path', ['/', '/api/state', '/api/demo/reset', '/api/incidents', '/api/incidents/1', '/api/incidents/1/evidence', '/api/incidents/1/reassign', '/docs', '/redoc', '/openapi.json', '/retell/webhook/', '/retell/webhook/api/state'])
+@pytest.mark.parametrize('path', ['/', '/api/state', '/api/demo/reset', '/api/incidents', '/api/incidents/1', '/api/incidents/1/evidence', '/api/incidents/1/reassign', '/api/incidents/1/request-callback', '/api/reports/1/callback-opt-out', '/docs', '/redoc', '/openapi.json', '/retell/webhook/', '/retell/webhook/api/state'])
 @pytest.mark.parametrize('method', ['GET', 'POST'])
 def test_only_webhook_path_is_public(public, path, method):
     ingress, seen = public
@@ -185,7 +185,8 @@ def test_intake_agent_cannot_impersonate_callback(public):
     assert send(public, data).status_code == 400
 
 
-def test_callback_agent_routes_to_outcome_not_intake(public, client):
+def test_callback_agent_routes_to_outcome_not_intake(public, client, dispatched_callback):
+    dispatched_callback(1, 'gateway-call')
     data = payload(agent='synthetic-callback-agent')
     data['call']['metadata'] = {'incident_id': 1, 'attempt_no': 1}
     data['call']['call_analysis']['custom_analysis_data'] = {'outcome': 'worse', 'anyone_in_danger': False}

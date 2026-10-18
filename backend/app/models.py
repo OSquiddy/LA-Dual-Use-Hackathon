@@ -73,6 +73,7 @@ class Assignment(SQLModel, table=True):
     accepted_at: datetime | None = None
     accepted_by: str | None = None
     default_owner_at: datetime | None = None
+    responsibility_profile: dict | None = Field(default=None, sa_column=Column(JSON, nullable=True))
 
 
 class Callback(SQLModel, table=True):
@@ -94,6 +95,7 @@ class Callback(SQLModel, table=True):
     request_key: str | None = Field(default=None, index=True, unique=True)
     mode: str = "legacy"  # historical rows are never redispatched
     live_authorized: bool = False
+    automatic: bool = True  # manual one-call confirmation never enables queued automatic calls
     error_code: str | None = None  # finite codes, never raw provider exception text
     transcript: str = ""  # restricted evidence only
     result_recorded: bool = False

@@ -16,7 +16,7 @@ def request_callback(incident_id: int, phone: str, attempt_no: int, vars: dict, 
     """Start an outbound callback to the resident; the outcome arrives later via the webhook.
 
     vars become Retell dynamic variables, e.g. {"location": "...", "hazard": "..."}.
-    TODO(A8): phones_down twist -> fail the call so the engine records no_answer (B14).
+    Simulation never contacts Retell. The engine owns consent, durable dispatch and retries.
     """
     if not valid_phone(phone):
         raise ValueError('A validated stored callback number is required')
@@ -36,6 +36,7 @@ def request_callback(incident_id: int, phone: str, attempt_no: int, vars: dict, 
             "from_number": RETELL_FROM_NUMBER,
             "to_number": phone,
             "override_agent_id": RETELL_CALLBACK_AGENT_ID,
+            "override_agent_version": "latest_published",
             "metadata": {"incident_id": incident_id, "attempt_no": attempt_no, "callback_request_id": request_key},
             "idempotency_key": request_key,
             "retell_llm_dynamic_variables": {k: str(vars[k]) for k in ('hazard', 'location')},

@@ -30,7 +30,7 @@ export function AssignmentTime({ value }: { value?: string | null }) {
 }
 
 /** One consistent view of responsibility in all queues, critical alerts and detail. */
-export default function AssignmentSummary({ incident }: { incident: Responsibility }) {
+export default function AssignmentSummary({ incident, compact = false }: { incident: Responsibility; compact?: boolean }) {
   const assignment = incident.assignment;
   const department = assignment ? assignment.department : incident.department;
   const owner = assignment ? assignment.owner : incident.owner;
@@ -38,16 +38,15 @@ export default function AssignmentSummary({ incident }: { incident: Responsibili
   const accepted = assignment ? Boolean(assignment.accepted_at) : incident.accepted;
   const acceptedBy = assignment ? assignment.accepted_by : owner;
   return (
-    <section className="responsibility" aria-label="Assignment and accountability">
+    <section className={`responsibility ${compact ? 'compact' : ''}`} aria-label="Assignment and accountability">
       <div className="responsibility-heading">
-        <strong>{department || "Department not assigned"}</strong>
         <span aria-label="Assignment status" className={`responsibility-status ${incident.status === "closed" ? "closed" : accepted ? "accepted" : "pending"}`}>
           {assignmentStatus(incident)}
         </span>
       </div>
       <dl className="responsibility-fields">
-        <div><dt>Responsible department</dt><dd>{department || "Awaiting assignment"}</dd></div>
-        <div><dt>Assigned individual</dt><dd>{owner || "Not assigned"}</dd></div>
+        <div><dt>Responsible department</dt><dd><strong>{assignment?.department_display_name || department || "Awaiting assignment"}</strong><small>{assignment?.operational_unit || "Operational unit not recorded"}</small></dd></div>
+        <div><dt>Assigned individual</dt><dd><strong>{assignment?.owner_display_name || owner || "Not assigned"}</strong><small>{owner ? assignment?.owner_role || "Role not recorded" : "Awaiting configured on-call assignment"}</small></dd></div>
         <div><dt>Acknowledgment</dt><dd>
           {acknowledged ? `Recorded${assignment?.acknowledged_by ? ` by ${assignment.acknowledged_by}` : ""}` : "Not recorded"}
           {assignment?.acknowledged_at && <><br /><AssignmentTime value={assignment.acknowledged_at} /></>}
@@ -57,10 +56,11 @@ export default function AssignmentSummary({ incident }: { incident: Responsibili
           {assignment?.accepted_at && <><br /><AssignmentTime value={assignment.accepted_at} /></>}
         </dd></div>
         <div><dt>Assigned at</dt><dd><AssignmentTime value={assignment?.assigned_at} /></dd></div>
-        {assignment?.default_owner_at && <div><dt>On-call individual assigned</dt><dd><AssignmentTime value={assignment.default_owner_at} /></dd></div>}
+        {!compact && assignment?.default_owner_at && <div><dt>On-call individual assigned</dt><dd><AssignmentTime value={assignment.default_owner_at} /></dd></div>}
         {incident.status === "closed" && <div><dt>Closed at</dt><dd><AssignmentTime value={incident.closed_at} /></dd></div>}
       </dl>
-      <p className="roster-note">Prototype roster · fictional demo personnel</p>
+      {compact && <p className="roster-note">Prototype roster · fictional demo personnel</p>}
+      {!compact && <p className="roster-note">{assignment?.profile_recorded ? `${assignment.roster_area ?? 'Coverage not recorded'} · ` : 'Legacy assignment · unit and role were not recorded. '}Prototype roster · fictional demo personnel. Human actors are recorded under their entered name.</p>}
     </section>
   );
 }

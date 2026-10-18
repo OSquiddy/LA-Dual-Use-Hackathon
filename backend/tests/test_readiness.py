@@ -79,7 +79,9 @@ def test_provider_timeout_records_unknown_without_risk_increase(client, monkeypa
     i = state(client)['incidents'][0]
     assert i['risk_score'] == 70 and i['status'] != 'closed'
     detail = client.get(f"/api/incidents/{i['id']}").json()
-    assert detail['callbacks'][0]['outcome'] == 'no_answer'
+    assert detail['callbacks'][0]['outcome'] is None
+    assert detail['callbacks'][0]['state'] == 'unknown'
+    assert detail['callbacks'][0]['error_code'] == 'dispatch_unknown'
 
 
 def test_second_missed_call_clears_retry_timer_at_cap(client, calls, clock):

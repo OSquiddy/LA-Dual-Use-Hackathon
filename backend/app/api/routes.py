@@ -1,13 +1,15 @@
 """REST API for the dashboard (PC-C). Shapes are in app/contracts.py."""
 import hmac
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Response
-from sqlmodel import Session
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
+from sqlmodel import Session, select
 
 from app.contracts import (
     AcceptIn,
     AcknowledgeIn,
     AssignmentOptionsView,
+    AssignmentHistoryPage,
+    AssignmentHistoryEntry,
     CloseIn,
     CallbackOptOutIn,
     IncidentDetailView,
@@ -24,8 +26,8 @@ from app.config import HAZARD_DEPARTMENT, REVIEWER_API_KEY
 from app.engine import callback_jobs, contact, ladder, oncall, seeds, twists, views
 from app.engine.assignments import assign, assignment_lock, latest_assignment
 from app.engine.ingest import ingest_report
-from app.models import Incident, Report
-from app.voice import simulator
+from app.models import Assignment, Incident, Report
+from app.voice import callbacks, simulator
 
 router = APIRouter(prefix="/api")
 
@@ -47,6 +49,21 @@ def _human_name(value: str) -> str:
 @router.get("/state", response_model=StateView)
 def get_state(s: Session = Depends(get_session)):
     return views.state_view(s)
+
+
+@router.get('/assignment-history', response_model=AssignmentHistoryPage)
+def assignment_history(before_id: int | None = Query(default=None, gt=0), limit: int = Query(default=30, ge=1, le=100), s: Session = Depends(get_session)):
+    query = select(Assignment).order_by(Assignment.id.desc()).limit(limit + 1)
+    if before_id is not None:
+        query = query.where(Assignment.id < before_id)
+    rows = s.exec(query).all()
+    entries = []
+    for assignment in rows[:limit]:
+        incident = s.get(Incident, assignment.incident_id)
+        if incident:
+            entries.append(AssignmentHistoryEntry(incident_id=incident.id, title=views.incident_view(s, incident).title,
+                status=incident.status, assignment=views.assignment_view(s, assignment)))
+    return AssignmentHistoryPage(entries=entries, next_before_id=rows[limit - 1].id if len(rows) > limit else None)
 
 
 @router.get("/incidents/{incident_id}", response_model=IncidentDetailView)
@@ -139,11 +156,11 @@ def request_callback(incident_id: int, body: RequestCallbackIn, s: Session = Dep
     with assignment_lock:
         incident = _incident_or_404(s, incident_id)
         try:
-            callback_jobs.enqueue(s, incident, by=_human_name(body.by), confirm_live=body.confirm_live)
+            job = callback_jobs.enqueue(s, incident, by=_human_name(body.by), confirm_live=body.confirm_live)
         except ValueError as exc:
             raise HTTPException(409, str(exc)) from None
         s.commit()
-        callback_jobs.dispatch_due()
+        callback_jobs.dispatch_attempt(job.id)
         s.expire_all()
         return views.incident_detail_view(s, _incident_or_404(s, incident_id))
 
@@ -161,6 +178,8 @@ def callback_opt_out(report_id: int, body: CallbackOptOutIn, s: Session = Depend
 
 @router.post("/incidents/{incident_id}/simulate-callback", response_model=IncidentDetailView, dependencies=[Depends(require_reviewer)])
 def simulate_callback(incident_id: int, body: SimulateCallbackIn, s: Session = Depends(get_session)):
+    if callbacks.CALL_MODE != 'simulate':
+        raise HTTPException(409, 'Synthetic outcomes are available only in simulation mode')
     _incident_or_404(s, incident_id)
     simulator.simulate_now(incident_id, body.outcome, body.danger)
     s.expire_all()

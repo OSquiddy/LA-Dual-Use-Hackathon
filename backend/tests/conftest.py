@@ -67,6 +67,23 @@ def clock():
 
 
 @pytest.fixture
+def dispatched_callback():
+    """A synthetic provider result must refer to a persisted dispatch, like production."""
+    def create(incident_id, call_id, attempt_no=1):
+        from sqlmodel import Session, select
+        from app.db import engine
+        from app.models import Callback, Report
+
+        with Session(engine) as s:
+            report = s.exec(select(Report).where(Report.incident_id == incident_id, Report.callback_ok == True)).first()
+            job = Callback(incident_id=incident_id, report_id=report.id, phone=report.phone,
+                           call_id=call_id, attempt_no=attempt_no, mode='simulate', state='calling')
+            s.add(job)
+            s.commit()
+    return create
+
+
+@pytest.fixture
 def signed_webhook(client, monkeypatch):
     """Authenticate synthetic payloads with a test-only key; never read local Retell secrets."""
     import hashlib

@@ -1,5 +1,6 @@
 import type { CriticalAlert, Incident } from "../types";
 import AssignmentSummary from "./AssignmentSummary";
+import { accepted, acknowledged } from '../workspace';
 
 interface Props {
   alerts: CriticalAlert[];
@@ -30,12 +31,16 @@ export default function CriticalAlerts({ alerts, incidents, onOpen }: Props) {
         return (
         <article className="critical-alert" key={alert.incident_id}>
           <h3>{alert.title}</h3>
-          {incident ? <AssignmentSummary incident={incident} /> : <p>Assignment data unavailable · open incident to review</p>}
+          {incident ? <AssignmentSummary incident={incident} compact /> : <p>Assignment data unavailable · open incident to review</p>}
           <p><strong>Danger indicator: {indicator}</strong></p>
           <p>{reason}</p>
           <p className="muted">
             Priority: critical review · Risk {incident?.risk_score ?? "unknown"}/100
           </p>
+          <p><strong>Pending action:</strong> {!incident ? 'Review the incident and confirm responsibility.' : accepted(incident)
+            ? 'Review current evidence and verify action before human closure.'
+            : !(incident.assignment?.owner ?? incident.owner) ? 'Assign an individual and record responsibility.'
+            : acknowledged(incident) ? 'Record acceptance or coordinate a documented handoff.' : 'Record acknowledgment and acceptance; review the reported danger.'}</p>
           <button onClick={() => onOpen(alert.incident_id)}>Review incident evidence</button>
         </article>
         );

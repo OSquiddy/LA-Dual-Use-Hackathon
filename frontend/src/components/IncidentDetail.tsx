@@ -1,24 +1,41 @@
-import { useEffect, useState } from "react";
-import { fetchIncident, simulateCallback } from "../api";
-import type { IncidentDetail as Detail, Outcome } from "../types";
+import { useEffect, useRef, useState } from "react";
+import { fetchIncident } from "../api";
+import type { IncidentDetail as Detail } from "../types";
 import EvidenceReview from "./EvidenceReview";
 import AssignmentSummary from "./AssignmentSummary";
 import AssignmentActions from "./AssignmentActions";
 import AssignmentHistory from "./AssignmentHistory";
+import CallbackPanel from "./CallbackPanel";
 
 interface Props {
   id: number;
   onClose: () => void;
 }
 
-const OUTCOMES: Outcome[] = ["worse", "same", "better", "no_answer"];
 const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
-/** TODO(C4/C10): live "calling resident…" indicator, nicer timeline. */
 export default function IncidentDetail({ id, onClose }: Props) {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [error, setError] = useState(false);
 
+  const panel = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    panel.current?.focus();
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key === 'Tab') {
+        const targets = Array.from(panel.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), summary, a[href], [tabindex="0"]') ?? []);
+        const first = targets[0], last = targets[targets.length - 1];
+        if (event.shiftKey && (document.activeElement === first || document.activeElement === panel.current)) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener('keydown', keyboard);
+    return () => { document.body.style.overflow = overflow; document.removeEventListener('keydown', keyboard); previous?.focus(); };
+  }, []);
   useEffect(() => {
     let alive = true;
     setDetail(null);
@@ -38,22 +55,24 @@ export default function IncidentDetail({ id, onClose }: Props) {
   }, [id]);
 
   return (
-    <aside className="drawer">
+    <div className="drawer-backdrop" onClick={onClose}><aside ref={panel} className="drawer" role="dialog" aria-modal="true" aria-label={`Incident ${id} details`} tabIndex={-1} onClick={event => event.stopPropagation()}>
       <button className="close" onClick={onClose} aria-label="Close">×</button>
       {error && <p role="alert">Could not load this incident. Retrying…</p>}
       {!detail ? (
         !error && <p className="muted">Loading…</p>
       ) : (
         <>
-          <h2>{detail.title}</h2>
+          <div className="eyebrow">INCIDENT #{detail.id} · {detail.status}</div><h2>{detail.title}</h2>
+          <nav className="detail-nav" aria-label="Incident sections">{["Overview", "Responsibility", "Assignment History", "Follow-up", "Evidence"].map(label => <a key={label} href={`#detail-${label.toLowerCase().replace(/ /g, "-")}`}>{label}</a>)}</nav>
+          <h3 id="detail-overview">Overview</h3><p>Hazard: {detail.hazard_type.replace(/_/g, " ")}. Reported location: {detail.reports.find(r => r.location_text)?.location_text ?? "Not confirmed"}.</p>
           <p className="muted">
             Risk {detail.risk_score}/100 · step {detail.ladder_step}/5
           </p>
-          <AssignmentSummary incident={detail} />
+          <h3 id="detail-responsibility">Responsibility</h3><AssignmentSummary incident={detail} />
           <AssignmentActions key={detail.id} incident={detail} onChanged={() => {
             fetchIncident(id).then(setDetail).catch(() => setError(true));
           }} />
-          <AssignmentHistory incident={detail} />
+          <div id="detail-assignment-history"><AssignmentHistory incident={detail} /></div>
 
           <h3>Still missing</h3>
           {detail.debts.length ? (
@@ -74,26 +93,12 @@ export default function IncidentDetail({ id, onClose }: Props) {
             ))}
           </ol>
 
-          <h3>Callbacks</h3>
-          {detail.callbacks.length ? (
-            <ul>
-              {detail.callbacks.map((c) => (
-                <li key={c.attempt_no}>
-                  #{c.attempt_no} · {c.outcome ?? "ringing…"} {c.danger && "· Possible danger reported"}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="muted">No callbacks yet.</p>
-          )}
-          <div className="sim">
-            <span className="muted">Simulate callback:</span>
-            {OUTCOMES.map((o) => (
-              <button key={o} onClick={() => simulateCallback(id, o, o === "worse")}>{o.replace("_", " ")}</button>
-            ))}
-          </div>
+          <h3 id="detail-follow-up">Follow-up</h3>
+          <CallbackPanel key={detail.id} incident={detail} onChanged={() => {
+            fetchIncident(id).then(setDetail).catch(() => setError(true));
+          }} />
 
-          <h3>Reports ({detail.reports.length})</h3>
+          <h3 id="detail-evidence">Evidence · reports ({detail.reports.length})</h3>
           {detail.reports.map((r) => (
             <div key={r.id} className="report">
               <div className="muted">{time(r.created_at)} · {r.location_text ?? "location unknown"} · {r.hazard_type}</div>
@@ -106,6 +111,6 @@ export default function IncidentDetail({ id, onClose }: Props) {
           <EvidenceReview key={detail.id} id={detail.id} />
         </>
       )}
-    </aside>
+    </aside></div>
   );
 }

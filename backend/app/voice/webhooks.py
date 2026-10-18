@@ -112,7 +112,8 @@ def callback_from_call(call: dict) -> CallbackOutcome:
     return CallbackOutcome(
         incident_id=_positive_int(metadata["incident_id"]), call_id=call["call_id"],
         attempt_no=_positive_int(metadata.get("attempt_no", 1)), outcome=outcome,
-        danger=_as_bool(fields.get("anyone_in_danger")), summary=fields.get("summary") or "",
+        danger=_as_bool(fields.get("anyone_in_danger")) if outcome != 'no_answer' and not wrong_number else False,
+        summary=fields.get("summary") or "",
         transcript=call.get("transcript") or "",
         request_key=request_key, callback_opt_out=opt_out, wrong_number=wrong_number,
         disconnection_reason=call.get('disconnection_reason'),

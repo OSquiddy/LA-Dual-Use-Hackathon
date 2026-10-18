@@ -118,7 +118,7 @@ function find(node, predicate) {
     assert(button.props.disabled); assert.equal(requests.length, 0);
   });
   await check('Named acceptance sends the actual person and assignment ID, updating only after server confirmation', async () => {
-    const requests = [], manualActions = { actor: 'Synthetic actual person', setters: [] };
+    const requests = [], manualActions = { actor: 'Synthetic actual person', reviewerKey: 'synthetic-reviewer-key', setters: [] };
     let resolve, changed = 0;
     const Component = load('src/components/AssignmentActions.tsx', { manualActions, fetch: (url, init) => {
       requests.push({ url, init }); return new Promise(done => { resolve = done; });
@@ -134,7 +134,7 @@ function find(node, predicate) {
     assert.equal(changed, 1);
   });
   await check('A rejected action never claims acceptance or refreshes as a success', async () => {
-    const manualActions = { actor: 'Synthetic person', setters: [] }; let changed = 0;
+    const manualActions = { actor: 'Synthetic person', reviewerKey: 'synthetic-reviewer-key', setters: [] }; let changed = 0;
     const Component = load('src/components/AssignmentActions.tsx', { manualActions, fetch: async () => ({ ok: false, status: 409 }) }).default;
     const tree = Component({ incident: base, onChanged() { changed++; } });
     find(tree, node => node.type === 'button' && node.props.children === 'Accept responsibility').props.onClick();

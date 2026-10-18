@@ -70,7 +70,7 @@ def _default_owner(s: Session, incident: Incident, now: datetime) -> None:
     if assignment is None:
         _missing_department(s, incident)
         return
-    name = oncall.default_owner(assignment.department, incident.area)
+    name = oncall.default_owner(assignment.department, incident.area, incident.id)
     if assignment.owner:
         pass  # An explicit assignment is not replaced by the automatic roster step.
     elif name:
@@ -95,6 +95,8 @@ def _missing_department(s: Session, incident: Incident) -> None:
 
 def _follow_up(s: Session, incident: Incident, now: datetime) -> None:
     """Step 4: call back a consenting caller, or record why we can't."""
+    if callbacks.CALL_MODE == 'live' and not callback_jobs.automatic_live_enabled():
+        return  # Keep the due timer while paused; acceptance/closure still cancels it.
     incident.ladder_step = 4
     incident.next_step_at = None
     target = callback_target(s, incident)
@@ -109,7 +111,7 @@ def _follow_up(s: Session, incident: Incident, now: datetime) -> None:
         return
 
     try:
-        callback_jobs.enqueue(s, incident, now)
+        callback_jobs.enqueue(s, incident, now, automatic=True)
     except ValueError:
         log_event(s, incident.id, 'callback_blocked', 'Callback not scheduled: pending attempt, attempt limit, or live authorization gate')
 
@@ -173,7 +175,11 @@ def _record_callback_outcome(o: CallbackOutcome, *, require_existing: bool) -> N
         callback.summary = o.summary
         callback.transcript = o.transcript
         callback.result_recorded = True
+        if o.disconnection_reason in ('dial_busy', 'dial_failed', 'invalid_destination', 'telephony_provider_unavailable', 'telephony_provider_permission_denied', 'sip_routing_error'):
+            callback.error_code = o.disconnection_reason
         callback.state = 'failed' if callback.error_code in ('phone_outage', 'provider_rejected') else 'completed'
+        if o.outcome == 'no_answer' and callback.error_code:
+            callback.state = 'failed'
         if o.outcome is None:
             callback.error_code = 'wrong_number' if o.wrong_number else 'opt_out' if o.callback_opt_out else 'analysis_missing'
             callback.state = 'completed' if o.callback_opt_out or o.wrong_number else 'unknown'
@@ -183,9 +189,13 @@ def _record_callback_outcome(o: CallbackOutcome, *, require_existing: bool) -> N
         ref = [f"callback:{callback.id}"]
 
         if callback.outcome is None:
+            if callback.state == 'unknown':
+                open_debt(s, incident.id, 'callback_unknown', 'Callback analysis missing; human review required')
             log_event(s, incident.id, 'callback', 'Callback completed without a verified condition update; human review required', evidence=ref)
             if callback.danger:
                 critical.flag(s, incident, 'evidence', evidence=ref, actor='resident')
+            elif callback.state == 'unknown' and incident.risk_score >= HIGH_RISK_THRESHOLD:
+                critical.flag(s, incident, 'uncertainty')
         elif o.outcome == "no_answer":
             log_event(s, incident.id, "callback", f"Callback #{o.attempt_no}: no answer — status unknown, not worse", evidence=ref)
             _after_no_answer(s, incident, o.attempt_no)
@@ -215,8 +225,8 @@ def _after_no_answer(s: Session, incident: Incident, attempt_no: int) -> None:
         critical.flag(
             s, incident, "uncertainty",
         )
-    if (attempt_no < MAX_CALLBACK_ATTEMPTS and contact.target(s, incident) is not None
-            and (callbacks.CALL_MODE != "live" or callback_jobs.LIVE_CALLBACKS_ENABLED)):
+    if (attempt_no < MAX_CALLBACK_ATTEMPTS and contact.target(s, incident, live_only=callbacks.CALL_MODE == 'live') is not None
+            and (callbacks.CALL_MODE != "live" or callback_jobs.automatic_live_enabled())):
         incident.next_step_at = utcnow() + timedelta(seconds=TIMING.callback_retry_s)
 
 
@@ -266,11 +276,11 @@ def close(s: Session, incident: Incident, by: str, note: str = "") -> None:
 
 
 def callback_target(s: Session, incident: Incident) -> Report | None:
-    return contact.target(s, incident)
+    return contact.target(s, incident, live_only=callbacks.CALL_MODE == 'live')
 
 
 def callback_blocker(s: Session, incident: Incident) -> tuple[str, str, str] | None:
-    return contact.blocker(s, incident)
+    return contact.blocker(s, incident, live_only=callbacks.CALL_MODE == 'live')
 
 
 def refresh_consent_debt(s: Session, incident: Incident) -> None:

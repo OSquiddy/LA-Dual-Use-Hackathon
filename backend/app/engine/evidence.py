@@ -90,7 +90,7 @@ def event_reason(s: Session, incident: Incident, event: Event) -> str:
             if table == "callback" and raw_id.isdigit() and len(raw_id) <= 18:
                 callback = s.get(Callback, int(raw_id))
                 if callback and callback.incident_id == incident.id:
-                    return (f"Callback #{callback.attempt_no}: resident says {callback.outcome}" + ("; possible danger reported" if callback.danger else "")) if callback.outcome else callback_summary(callback)
+                    return (f"Callback #{callback.attempt_no}: resident says {callback.outcome}" + ("; possible danger reported" if callback.danger else "")) if callback.outcome in ('worse', 'same', 'better') else callback_summary(callback)
         return "Callback update recorded; review authorized evidence"
     if event.type == "critical":
         return "Supervisor review: " + alert_reason(s, incident, evidence=event.evidence)

@@ -1,6 +1,174 @@
 {
-  "_note": "Fictional demonstration personnel, configured by department and area for ladder step 3. No city affiliation or actual employee identity is implied. Missing entries never produce invented owners.",
-  "Street Services": { "Highland Park": "J. Ramirez (on-call)" },
-  "Urban Forestry": { "Highland Park": "T. Nguyen (on-call)" },
-  "Power & Water": { "Highland Park": "K. Okafor (on-call)" }
+  "_note": "All staff and response units are fictional demonstration configurations. Parent organization names reference public city sources; no city affiliation or real employee identity is implied. Citywide fallback is explicit demo coverage, not geocoding. Routing is a demo assumption, not official dispatch policy. Existing assignments are never rewritten.",
+  "_departments": {
+    "Stormwater Operations": {
+      "display_name": "Public Works \u2014 LA Sanitation & Environment",
+      "unit": "Stormwater & Drainage Response",
+      "source_url": "https://sanitation.lacity.gov/programs/watershed-protection"
+    },
+    "Street Services": {
+      "display_name": "Public Works \u2014 Bureau of Street Services",
+      "unit": "Roadway Maintenance & Obstructions",
+      "source_url": "https://lacity.gov/government/departments-bureaus"
+    },
+    "Traffic Operations": {
+      "display_name": "Los Angeles Department of Transportation",
+      "unit": "Traffic & Roadway Coordination",
+      "source_url": "https://lacity.gov/government/departments-bureaus"
+    },
+    "Urban Forestry": {
+      "display_name": "Public Works \u2014 Bureau of Street Services",
+      "unit": "Urban Forestry Response",
+      "source_url": "https://lacity.gov/government/departments-bureaus"
+    },
+    "Power & Water": {
+      "display_name": "Los Angeles Department of Water and Power",
+      "unit": "Electrical & Utility Coordination",
+      "source_url": "https://www.ladwp.com/who-we-are/power-system"
+    }
+  },
+  "_staff": [
+    {
+      "id": "elena-morales",
+      "name": "Elena Morales",
+      "department": "Stormwater Operations",
+      "role": "Stormwater Operations Coordinator",
+      "on_call": true,
+      "fictional": true,
+      "aliases": []
+    },
+    {
+      "id": "daniel-park",
+      "name": "Daniel Park",
+      "department": "Stormwater Operations",
+      "role": "Drainage Response Specialist",
+      "on_call": true,
+      "fictional": true,
+      "aliases": []
+    },
+    {
+      "id": "jordan-ramirez",
+      "name": "Jordan Ramirez",
+      "department": "Street Services",
+      "role": "Roadway Maintenance Coordinator",
+      "on_call": true,
+      "fictional": true,
+      "aliases": [
+        "J. Ramirez (on-call)"
+      ]
+    },
+    {
+      "id": "maya-chen",
+      "name": "Maya Chen",
+      "department": "Street Services",
+      "role": "Street Operations Supervisor",
+      "on_call": true,
+      "fictional": true,
+      "aliases": []
+    },
+    {
+      "id": "marcus-lee",
+      "name": "Marcus Lee",
+      "department": "Traffic Operations",
+      "role": "Traffic Operations Coordinator",
+      "on_call": true,
+      "fictional": true,
+      "aliases": []
+    },
+    {
+      "id": "sofia-bennett",
+      "name": "Sofia Bennett",
+      "department": "Traffic Operations",
+      "role": "Roadway Incident Specialist",
+      "on_call": true,
+      "fictional": true,
+      "aliases": []
+    },
+    {
+      "id": "olivia-torres",
+      "name": "Olivia Torres",
+      "department": "Urban Forestry",
+      "role": "Urban Forestry Coordinator",
+      "on_call": true,
+      "fictional": true,
+      "aliases": []
+    },
+    {
+      "id": "ethan-brooks",
+      "name": "Ethan Brooks",
+      "department": "Urban Forestry",
+      "role": "Field Operations Specialist",
+      "on_call": true,
+      "fictional": true,
+      "aliases": []
+    },
+    {
+      "id": "alex-rivera",
+      "name": "Alex Rivera",
+      "department": "Power & Water",
+      "role": "Electrical Response Coordinator",
+      "on_call": true,
+      "fictional": true,
+      "aliases": []
+    },
+    {
+      "id": "priya-shah",
+      "name": "Priya Shah",
+      "department": "Power & Water",
+      "role": "Utility Operations Specialist",
+      "on_call": true,
+      "fictional": true,
+      "aliases": []
+    }
+  ],
+  "Stormwater Operations": {
+    "Highland Park": [
+      "elena-morales",
+      "daniel-park"
+    ],
+    "*": [
+      "elena-morales",
+      "daniel-park"
+    ]
+  },
+  "Street Services": {
+    "Highland Park": [
+      "jordan-ramirez",
+      "maya-chen"
+    ],
+    "*": [
+      "jordan-ramirez",
+      "maya-chen"
+    ]
+  },
+  "Traffic Operations": {
+    "Highland Park": [
+      "marcus-lee",
+      "sofia-bennett"
+    ],
+    "*": [
+      "marcus-lee",
+      "sofia-bennett"
+    ]
+  },
+  "Urban Forestry": {
+    "Highland Park": [
+      "olivia-torres",
+      "ethan-brooks"
+    ],
+    "*": [
+      "olivia-torres",
+      "ethan-brooks"
+    ]
+  },
+  "Power & Water": {
+    "Highland Park": [
+      "alex-rivera",
+      "priya-shah"
+    ],
+    "*": [
+      "alex-rivera",
+      "priya-shah"
+    ]
+  }
 }

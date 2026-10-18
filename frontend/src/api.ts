@@ -1,6 +1,6 @@
 import stateFixture from "./fixtures/state.json";
 import incidentFixture from "./fixtures/incident.json";
-import type { AppState, AssignmentOptions, IncidentDetail, Outcome } from "./types";
+import type { AppState, AssignmentHistoryPage, AssignmentOptions, IncidentDetail, Outcome } from "./types";
 
 export const API_MODE = import.meta.env.VITE_API ?? "fixture";
 
@@ -28,6 +28,13 @@ export function fetchState(): Promise<AppState> {
 export function fetchIncident(id: number): Promise<IncidentDetail> {
   if (API_MODE === "fixture") return Promise.resolve({ ...(incidentFixture as IncidentDetail), id });
   return request(`/api/incidents/${id}`);
+}
+
+export function fetchAssignmentHistory(beforeId?: number): Promise<AssignmentHistoryPage> {
+  if (API_MODE === 'fixture') return Promise.resolve({ entries: (incidentFixture.assignment_history ?? [incidentFixture.assignment]).map(assignment => ({
+    incident_id: incidentFixture.id, title: incidentFixture.title, status: incidentFixture.status as IncidentDetail['status'], assignment,
+  })), next_before_id: null });
+  return request('/api/assignment-history' + (beforeId ? `?before_id=${beforeId}` : ''));
 }
 
 export function fetchIncidentEvidence(id: number, reviewerKey: string): Promise<IncidentDetail> {

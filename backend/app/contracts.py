@@ -69,6 +69,14 @@ class AssignmentView(BaseModel):
     id: int | None = None
     assigned_by: str | None = None
     change_reason: str | None = None
+    department_display_name: str | None = None
+    operational_unit: str | None = None
+    owner_display_name: str | None = None
+    owner_role: str | None = None
+    staff_id: str | None = None
+    roster_area: str | None = None
+    fictional_personnel: bool = False
+    profile_recorded: bool = False
 
 
 class IncidentView(BaseModel):
@@ -92,6 +100,18 @@ class IncidentView(BaseModel):
     assignment: AssignmentView | None = None
     closed_at: datetime | None = None
     closed_by: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    callback_state: str | None = None
+    priority: Literal['critical', 'high', 'medium', 'low'] = 'low'
+
+
+class StaffView(BaseModel):
+    id: str
+    name: str
+    role: str | None = None
+    on_call: bool = False
+    fictional: bool = True
 
 
 class DepartmentView(BaseModel):
@@ -99,6 +119,11 @@ class DepartmentView(BaseModel):
     assigned_1h: int
     accepted_1h: int
     silent: bool
+    display_name: str | None = None
+    operational_unit: str | None = None
+    active_incidents: int = 0
+    awaiting_acceptance: int = 0
+    staff: list[StaffView] = []
 
 
 class AlertView(BaseModel):
@@ -136,6 +161,8 @@ class StateView(BaseModel):
     departments: list[DepartmentView]
     alerts: list[AlertView]
     critical_alerts: list[CriticalAlertView] = []  # uncapped, shown apart from the top 10
+    call_mode: str = 'simulate'
+    automatic_live_enabled: bool = False
 
 
 class ReportView(BaseModel):
@@ -196,6 +223,9 @@ class IncidentDetailView(IncidentView):
 class DepartmentAssignmentOption(BaseModel):
     department: str
     owners: list[str]
+    display_name: str | None = None
+    operational_unit: str | None = None
+    staff: list[StaffView] = []
 
 
 class AssignmentOptionsView(BaseModel):
@@ -203,6 +233,18 @@ class AssignmentOptionsView(BaseModel):
     area: str | None
     departments: list[DepartmentAssignmentOption]
     fictional_roster: bool = True
+
+
+class AssignmentHistoryEntry(BaseModel):
+    incident_id: int
+    title: str
+    status: Status
+    assignment: AssignmentView
+
+
+class AssignmentHistoryPage(BaseModel):
+    entries: list[AssignmentHistoryEntry]
+    next_before_id: int | None = None
 
 
 # --- Request bodies --------------------------------------------------------------------------

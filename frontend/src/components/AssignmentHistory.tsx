@@ -10,7 +10,9 @@ export default function AssignmentHistory({ incident }: { incident: IncidentDeta
       <ol className="assignment-records">
         {history.map((assignment, index) => (
           <li key={assignment.id ?? index}>
-            <strong>{assignment.department}</strong> · {assignment.owner || "Individual not assigned"}
+            <strong>{assignment.department_display_name ?? assignment.department}</strong> · {assignment.owner_display_name ?? assignment.owner ?? "Individual not assigned"}
+            {assignment.operational_unit && <small>{assignment.operational_unit}</small>}
+            {assignment.owner_role && <small>{assignment.owner_role}</small>}
             <dl className="responsibility-fields">
               <div><dt>Assigned at</dt><dd><AssignmentTime value={assignment.assigned_at} /></dd></div>
               <div><dt>Recorded by</dt><dd>{assignment.assigned_by || "Not recorded in legacy assignment"}</dd></div>

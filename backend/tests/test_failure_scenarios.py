@@ -117,8 +117,9 @@ def test_authenticated_unicode_and_duplicate_intake(client, signed_webhook):
     assert any(d['kind'] == 'location' for d in unknown['debts'])
 
 
-def test_duplicate_signed_callback_preserves_events_and_risk(client, signed_webhook):
+def test_duplicate_signed_callback_preserves_events_and_risk(client, signed_webhook, dispatched_callback):
     i = incident_id(client)
+    dispatched_callback(i, 'callback-retry')
     payload = {'event': 'call_analyzed', 'call': {
         'call_id': 'callback-retry', 'metadata': {'incident_id': i, 'attempt_no': 1},
         'call_analysis': {'custom_analysis_data': {'outcome': 'worse'}},
@@ -134,7 +135,7 @@ def test_department_toggle_produces_one_alert_and_suppresses_nudge(client, clock
     client.post('/api/twists/dept_silent', json={'on': True})
     clock.tick()
     alerts = state(client)['alerts']
-    assert len(alerts) == 1 and alerts[0]['department'] == 'Street Services'
+    assert len(alerts) == 1 and alerts[0]['department'] == 'Stormwater Operations'
     events = client.get(f'/api/incidents/{i}').json()['events']
     assert not any(e['type'] == 'nudge' for e in events)
     assert any(e['type'] == 'nudge_suppressed' for e in events)
@@ -152,7 +153,7 @@ def test_real_department_threshold_and_acceptance_clear_alert(client):
             case = Incident(title=f'Synthetic threshold case {n}', hazard_type='pothole')
             s.add(case)
             s.flush()
-            s.add(Assignment(incident_id=case.id, department='Street Services'))
+            s.add(Assignment(incident_id=case.id, department='Stormwater Operations'))
         s.commit()
     assert len(state(client)['alerts']) == 1
     with Session(engine) as s:

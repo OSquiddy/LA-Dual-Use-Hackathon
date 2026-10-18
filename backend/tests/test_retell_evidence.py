@@ -130,8 +130,9 @@ def test_legacy_quote_and_incorrect_contact_debt_are_projected_safely_without_re
         assert s.get(Incident, i).critical_quote == transcript
 
 
-def test_callback_summary_is_evidence_not_an_event_or_alert_reason(client, signed_webhook, reviewer):
+def test_callback_summary_is_evidence_not_an_event_or_alert_reason(client, signed_webhook, reviewer, dispatched_callback):
     i = client.get('/api/state').json()['incidents'][0]['id']
+    dispatched_callback(i, 'callback-private')
     summary = 'Agent: PRIVATE CALLBACK CONVERSATION\nUser: ' + 'water rising ' * 1000
     payload = {'event': 'call_analyzed', 'call': {'call_id': 'callback-private', 'metadata': {'incident_id': i},
                'call_analysis': {'custom_analysis_data': {'outcome': 'worse', 'anyone_in_danger': True, 'summary': summary}}}}

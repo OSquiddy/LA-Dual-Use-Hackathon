@@ -10,6 +10,8 @@
   "callback": [
     { "name": "outcome", "type": "enum", "choices": ["worse", "same", "better"], "description": "Compared with the original report. Leave empty if the resident did not answer" },
     { "name": "anyone_in_danger", "type": "boolean", "description": "True if the resident says anyone is in danger or stuck" },
-    { "name": "summary", "type": "string", "description": "One short sentence, e.g. 'water at the curb and rising'" }
+    { "name": "summary", "type": "string", "description": "One short factual sentence grounded in the resident's answers. Preserve uncertainty; empty if no condition update" },
+    { "name": "callback_opt_out", "type": "boolean", "description": "True only if the resident explicitly requests no more calls. False otherwise" },
+    { "name": "wrong_number", "type": "boolean", "description": "True only if the person explicitly says this is the wrong number or they did not make the original report. Do not invent a condition update" }
   ]
 }

@@ -7,6 +7,7 @@ from sqlmodel import Session, col, select
 
 from app.config import TIMING
 from app.engine.audit import clear_debt, open_debt, log_event
+from app.engine import oncall
 from app.models import Assignment, Incident
 from app.timeutil import utcnow
 
@@ -36,6 +37,7 @@ def assign(
     assignment = Assignment(
         incident_id=incident.id, department=department, owner=owner, assigned_at=now,
         default_owner_at=now if from_roster else None,
+        responsibility_profile=oncall.assignment_profile(department, owner, incident.area),
     )
     s.add(assignment)
     s.flush()

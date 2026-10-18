@@ -12,22 +12,24 @@ def valid_phone(value: str | None) -> bool:
     return isinstance(value, str) and re.fullmatch(r"\+[1-9][0-9]{7,14}", value) is not None
 
 
-def eligible_report(s: Session, report: Report) -> bool:
-    return report.callback_ok is True and not report.callback_opt_out and valid_phone(report.phone) and s.get(ContactPreference, report.phone) is None
+def eligible_report(s: Session, report: Report, *, live_only=False) -> bool:
+    return (not live_only or report.source == 'retell') and report.callback_ok is True and not report.callback_opt_out and valid_phone(report.phone) and s.get(ContactPreference, report.phone) is None
 
 
-def target(s: Session, incident: Incident) -> Report | None:
+def target(s: Session, incident: Incident, *, live_only=False) -> Report | None:
     reports = s.exec(select(Report).where(Report.incident_id == incident.id).order_by(col(Report.created_at).desc(), col(Report.id).desc())).all()
-    return next((r for r in reports if eligible_report(s, r)), None)
+    return next((r for r in reports if eligible_report(s, r, live_only=live_only)), None)
 
 
-def blocker(s: Session, incident: Incident) -> tuple[str, str, str] | None:
+def blocker(s: Session, incident: Incident, *, live_only=False) -> tuple[str, str, str] | None:
     reports = s.exec(select(Report).where(Report.incident_id == incident.id)).all()
-    if any(eligible_report(s, r) for r in reports):
+    if any(eligible_report(s, r, live_only=live_only) for r in reports):
         return None
+    if live_only and not any(r.source == 'retell' and r.callback_ok for r in reports):
+        return ('consent_unknown', 'Live callbacks require explicit consent from a resident intake call; seed permissions authorize simulation only', 'no live resident consent')
     if any(r.callback_opt_out or (valid_phone(r.phone) and s.get(ContactPreference, r.phone)) for r in reports):
         return ('callback_opt_out', 'Callback blocked by opt-out or wrong-number record; a person must follow up', 'callback contact blocked')
-    consented = [r for r in reports if r.callback_ok]
+    consented = [r for r in reports if r.callback_ok and (not live_only or r.source == 'retell')]
     if consented:
         if any(r.phone and r.phone.strip() for r in consented):
             return ('callback_number_invalid', 'Callback permitted; a valid E.164 callback number is required', 'callback number invalid')

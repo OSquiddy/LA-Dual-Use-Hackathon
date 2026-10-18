@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       port: 5173,
-      proxy: { "/api": env.VITE_BACKEND_URL || "http://localhost:8000" },
+      proxy: { "/api": env.VITE_BACKEND_URL || "http://127.0.0.1:8001" },
     },
   };
 });

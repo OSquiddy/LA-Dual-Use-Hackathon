@@ -78,10 +78,10 @@ HAZARD_LABELS = {
 }
 
 HAZARD_DEPARTMENT = {
-    "flood": "Street Services",
-    "blocked_drain": "Street Services",
-    "water_on_road": "Street Services",
-    "stalled_vehicle": "Street Services",
+    "flood": "Stormwater Operations",
+    "blocked_drain": "Stormwater Operations",
+    "water_on_road": "Stormwater Operations",
+    "stalled_vehicle": "Traffic Operations",
     "pothole": "Street Services",
     "debris": "Street Services",
     "downed_tree": "Urban Forestry",

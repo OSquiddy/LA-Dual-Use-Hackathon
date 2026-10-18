@@ -12,11 +12,12 @@ from app.contracts import (
     ReportView,
     StateView,
 )
-from app.engine import callback_jobs, contact, silence, supervisor, twists
+from app.engine import callback_jobs, contact, oncall, silence, supervisor, twists
 from app.engine.evidence import alert_reason, callback_summary, display_location, event_reason
 from app.engine.ladder import callback_blocker, latest_assignment
 from app.models import Assignment, Callback, ContactPreference, Debt, Event, Incident, Report
 from app.timeutil import from_db, utcnow
+from app.voice import callbacks as callback_voice
 
 
 def incident_view(s: Session, incident: Incident) -> IncidentView:
@@ -24,6 +25,7 @@ def incident_view(s: Session, incident: Incident) -> IncidentView:
     report_count = s.exec(select(func.count()).select_from(Report).where(Report.incident_id == incident.id)).one()
     debts = s.exec(select(Debt).where(Debt.incident_id == incident.id, col(Debt.cleared_at).is_(None))).all()
     last_event = s.exec(select(Event).where(Event.incident_id == incident.id).order_by(col(Event.id).desc())).first()
+    last_callback = s.exec(select(Callback).where(Callback.incident_id == incident.id).order_by(col(Callback.id).desc())).first()
     why = alert_reason(s, incident) if incident.critical else (event_reason(s, incident, last_event) if last_event else "")
     # Derive contact blockers from persisted report consent, including older rows
     # mislabeled as no-consent when only a callback number was missing. No writes.
@@ -52,6 +54,9 @@ def incident_view(s: Session, incident: Incident) -> IncidentView:
         assignment=assignment_view(s, assignment) if assignment else None,
         closed_at=from_db(incident.closed_at),
         closed_by=incident.closed_by,
+        created_at=from_db(incident.created_at), updated_at=from_db(last_event.at if last_event else incident.created_at),
+        callback_state=last_callback.state if last_callback else None,
+        priority='critical' if incident.critical else 'high' if incident.risk_score >= 60 else 'medium' if incident.risk_score >= 30 else 'low',
     )
 
 
@@ -75,7 +80,7 @@ def incident_detail_view(s: Session, incident: Incident, *, include_evidence: bo
                 created_at=from_db(r.created_at),
                 callback_ok=r.callback_ok,
                 callback_opt_out=r.callback_opt_out or bool(r.phone and s.get(ContactPreference, r.phone)),
-                callback_eligible=contact.eligible_report(s, r),
+                callback_eligible=contact.eligible_report(s, r, live_only=callback_voice.CALL_MODE == 'live'),
             )
             for r in reports
         ],
@@ -111,6 +116,8 @@ def assignment_view(s: Session, assignment: Assignment) -> AssignmentView:
         accepted_at=from_db(assignment.accepted_at), accepted_by=assignment.accepted_by,
         assigned_by=creation.actor if creation else None,
         change_reason=event_reason(s, s.get(Incident, assignment.incident_id), creation) if creation else None,
+        **(assignment.responsibility_profile or {'department_display_name': oncall.department_info(assignment.department).get('display_name', assignment.department), 'owner_display_name': assignment.owner}),
+        profile_recorded=assignment.responsibility_profile is not None,
     )
 
 
@@ -127,6 +134,8 @@ def state_view(s: Session) -> StateView:
         departments=silence.department_stats(s),
         alerts=silence.alerts(s),
         critical_alerts=supervisor.critical_alerts(s),
+        call_mode=callback_voice.CALL_MODE,
+        automatic_live_enabled=callback_jobs.automatic_live_enabled(),
     )
 
 

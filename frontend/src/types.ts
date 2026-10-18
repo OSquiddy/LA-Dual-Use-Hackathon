@@ -29,6 +29,10 @@ export interface Incident {
   assignment: Assignment | null;
   closed_at: string | null;
   closed_by: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  callback_state?: string | null;
+  priority?: "critical" | "high" | "medium" | "low";
 }
 
 export interface Department {
@@ -36,7 +40,14 @@ export interface Department {
   assigned_1h: number;
   accepted_1h: number;
   silent: boolean;
+  display_name?: string | null;
+  operational_unit?: string | null;
+  active_incidents?: number;
+  awaiting_acceptance?: number;
+  staff?: Staff[];
 }
+
+export interface Staff { id: string; name: string; role: string | null; on_call: boolean; fictional: boolean }
 
 export interface Alert {
   type: string;
@@ -72,6 +83,8 @@ export interface AppState {
   departments: Department[];
   alerts: Alert[];
   critical_alerts: CriticalAlert[]; // uncapped, shown apart from the top 10
+  call_mode?: string;
+  automatic_live_enabled?: boolean;
 }
 
 export interface Report {
@@ -133,12 +146,20 @@ export interface Assignment {
   id: number | null;
   assigned_by: string | null;
   change_reason: string | null;
+  department_display_name?: string | null;
+  operational_unit?: string | null;
+  owner_display_name?: string | null;
+  owner_role?: string | null;
+  staff_id?: string | null;
+  roster_area?: string | null;
+  fictional_personnel?: boolean;
+  profile_recorded?: boolean;
 }
 
 export interface AssignmentOptions {
   recommended_department: string;
   area: string | null;
-  departments: { department: string; owners: string[] }[];
+  departments: { department: string; owners: string[]; display_name?: string | null; operational_unit?: string | null; staff?: Staff[] }[];
   fictional_roster: boolean;
 }
 
@@ -149,3 +170,6 @@ export interface IncidentDetail extends Incident {
   assignment_history: Assignment[];
   callback_status?: CallbackStatus;
 }
+
+export interface AssignmentHistoryEntry { incident_id: number; title: string; status: Status; assignment: Assignment }
+export interface AssignmentHistoryPage { entries: AssignmentHistoryEntry[]; next_before_id: number | null }

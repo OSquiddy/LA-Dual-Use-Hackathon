@@ -1,5 +1,7 @@
 # Assignment and accountability
 
+These notes document the earlier assignment implementation. The current directory, staff profiles, additive profile migration, global history endpoint and redesigned interface are documented in [frontend/REDESIGN.md](../frontend/REDESIGN.md); its routing and migration notes supersede the older descriptions below.
+
 Department, individual, assignment status, acknowledgment, acceptance and available timestamps now share one responsibility panel in department cards, supervisor cards, Critical Review and incident detail. Times are displayed explicitly in America/Los_Angeles. The configured roster is labeled as fictional demonstration personnel throughout.
 
 ## From a report to accepted responsibility

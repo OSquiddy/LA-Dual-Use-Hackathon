@@ -24,7 +24,7 @@ function render(snapshot) {
       if (name === './api' || name === '../api') return { API_MODE: 'live' };
       // Inject fetched detail and an open drawer; no browser effects or network are implied.
       if (name === 'react' && file.endsWith('/App.tsx')) {
-        return { ...React, useState: () => [snapshot.detail.id, () => {}] };
+        return { ...React, useState: (initial) => [initial === null ? snapshot.detail.id : initial, () => {}] };
       }
       if (name === 'react' && file.endsWith('/IncidentDetail.tsx')) {
         return { ...React, useState: (initial) => [initial === null ? snapshot.detail : initial, () => {}], useEffect: () => {} };
